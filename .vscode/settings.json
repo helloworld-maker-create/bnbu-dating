@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "defaultMode": "bypassPermissions",
+    "allow": [
+      "Write(*memory*)",
+      "Edit(*memory*)"
+    ],
+    "additionalDirectories": [
+      "C:\\Users\\23328\\Desktop\\machine learning"
+    ]
+},
+"java.compile.nullAnalysis.mode": "automatic",
+"java.configuration.updateBuildConfiguration": "interactive"
+}
