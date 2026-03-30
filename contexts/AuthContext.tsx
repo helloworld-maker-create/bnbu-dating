@@ -1,7 +1,6 @@
 // contexts/AuthContext.tsx
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
-import { LoginCredentials, LoginResponse, RegisterData, ApiResponse, setAuthToken, getAuthToken, authenticatedFetch } from '../constants/ApiConfig';
-import { API_BASE_URL } from '../app/(tabs)/index';
+import { LoginCredentials, LoginResponse, RegisterData, ApiResponse, setAuthToken, getAuthToken, API_BASE_URL } from '../constants/ApiConfig';
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -11,6 +10,8 @@ interface AuthContextType {
   login: (credentials: LoginCredentials) => Promise<ApiResponse<any>>;
   register: (userData: RegisterData) => Promise<ApiResponse<any>>;
   logout: () => void;
+  isLoading: boolean;
+  validateToken: () => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -19,13 +20,39 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [token, setToken] = useState<string | null>(null);
   const [userId, setUserId] = useState<number | null>(null);
   const [eduEmail, setEduEmail] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
+  // 初始化时验证 token
   useEffect(() => {
-    // 页面加载时检查是否有现有的认证信息
-    const existingToken = getAuthToken();
-    if (existingToken) {
-      setToken(existingToken);
-    }
+    const checkAuth = async () => {
+      try {
+        const existingToken = await getAuthToken();
+        if (existingToken) {
+          // 验证 token 是否有效
+          const res = await fetch(`${API_BASE_URL}/api/users/me`, {
+            headers: { Authorization: `Bearer ${existingToken}` }
+          });
+          if (res.ok) {
+            const data: ApiResponse<{ userId: number; eduEmail: string }> = await res.json();
+            if (data.code === 0) {
+              setToken(existingToken);
+              setUserId(data.data.userId);
+              setEduEmail(data.data.eduEmail);
+            } else {
+              await setAuthToken(null); // 清除无效 token
+            }
+          } else {
+            await setAuthToken(null); // 清除无效 token
+          }
+        }
+      } catch (e) {
+        console.error('Token validation failed:', e);
+        // Token 验证失败时不清除，可能是网络问题
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    checkAuth();
   }, []);
 
   const login = async (credentials: LoginCredentials): Promise<ApiResponse<any>> => {
@@ -45,7 +72,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setToken(authToken);
         setUserId(data.data.userId);
         setEduEmail(data.data.eduEmail);
-        setAuthToken(authToken); // 保存到localStorage
+        await setAuthToken(authToken); // 保存到 AsyncStorage
         return data;
       } else {
         return data;
@@ -82,11 +109,28 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  const logout = () => {
+  const logout = async () => {
     setToken(null);
     setUserId(null);
     setEduEmail(null);
-    setAuthToken(null); // 清除localStorage中的token
+    await setAuthToken(null); // 清除 AsyncStorage 中的 token
+  };
+
+  const validateToken = async (): Promise<boolean> => {
+    if (!token) return false;
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/users/me`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.status === 401) {
+        await logout();
+        return false;
+      }
+      return res.ok;
+    } catch (e) {
+      console.error('Token validation error:', e);
+      return false;
+    }
   };
 
   const isAuthenticated = !!token;
@@ -101,6 +145,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         login,
         register,
         logout,
+        isLoading,
+        validateToken,
       }}
     >
       {children}

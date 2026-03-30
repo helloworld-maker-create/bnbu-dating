@@ -52,7 +52,15 @@ function RootLayoutNav() {
       <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
         <Stack>
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="modal" options={{ presentation: 'modal', title: '关于 Dating in BNBU' }} />
+          <Stack.Screen name="login" options={{ title: '登录' }} />
+          <Stack.Screen name="register" options={{ title: '注册' }} />
+          <Stack.Screen name="matches" options={{ title: '我的匹配' }} />
+          <Stack.Screen name="chat" options={{ title: '聊天', presentation: 'modal' }} />
+          <Stack.Screen name="profile/edit" options={{ title: '编辑资料' }} />
+          <Stack.Screen name="settings" options={{ title: '设置' }} />
+          <Stack.Screen name="help" options={{ title: '帮助与反馈' }} />
+          <Stack.Screen name="about" options={{ title: '关于我们' }} />
         </Stack>
       </ThemeProvider>
     </AuthProvider>

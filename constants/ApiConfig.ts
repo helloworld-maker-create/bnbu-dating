@@ -1,5 +1,11 @@
 // constants/ApiConfig.ts
-export const API_BASE_URL = 'http://YOUR_IP:8080'; // 请替换为你的实际IP地址
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import Constants from 'expo-constants';
+
+// API 基础地址 - 支持环境变量配置
+export const API_BASE_URL =
+  Constants.expoConfig?.extra?.apiUrl ??
+  __DEV__ ? 'http://192.168.1.100:8080' : 'https://api.bnbu-dating.com';
 
 // 认证相关的类型定义
 export interface LoginCredentials {
@@ -22,6 +28,16 @@ export interface RegisterData {
   password: string;
 }
 
+export interface UserProfile {
+  id: string;
+  userId?: string;
+  nickname: string;
+  major: string;
+  gpaLevel: string;
+  hobbies: string[] | string;
+  goals: string[] | string;
+}
+
 // 通用响应类型
 export type ApiResponse<T> = {
   code: number;
@@ -29,28 +45,32 @@ export type ApiResponse<T> = {
   data: T;
 };
 
-// 存储token的函数
-export const setAuthToken = (token: string | null) => {
-  if (typeof window !== 'undefined') {
+// 存储 token 的函数
+export const setAuthToken = async (token: string | null): Promise<void> => {
+  try {
     if (token) {
-      localStorage.setItem('authToken', token);
+      await AsyncStorage.setItem('authToken', token);
     } else {
-      localStorage.removeItem('authToken');
+      await AsyncStorage.removeItem('authToken');
     }
+  } catch (error) {
+    console.error('Failed to store auth token:', error);
   }
 };
 
-// 获取token的函数
-export const getAuthToken = (): string | null => {
-  if (typeof window !== 'undefined') {
-    return localStorage.getItem('authToken');
+// 获取 token 的函数
+export const getAuthToken = async (): Promise<string | null> => {
+  try {
+    return await AsyncStorage.getItem('authToken');
+  } catch (error) {
+    console.error('Failed to get auth token:', error);
+    return null;
   }
-  return null;
 };
 
-// 带认证的fetch包装器
+// 带认证的 fetch 包装器
 export const authenticatedFetch = async (url: string, options: RequestInit = {}) => {
-  const token = getAuthToken();
+  const token = await getAuthToken();
 
   const headers = {
     'Content-Type': 'application/json',
@@ -63,9 +83,9 @@ export const authenticatedFetch = async (url: string, options: RequestInit = {})
     headers,
   });
 
-  // 如果认证失败，清除本地token
+  // 如果认证失败，清除本地 token
   if (response.status === 401) {
-    setAuthToken(null);
+    await setAuthToken(null);
   }
 
   return response;

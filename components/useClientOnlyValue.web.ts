@@ -1,12 +1,5 @@
-import React from 'react';
-
-// `useEffect` is not invoked during server rendering, meaning
-// we can use this to determine if we're on the server or not.
-export function useClientOnlyValue<S, C>(server: S, client: C): S | C {
-  const [value, setValue] = React.useState<S | C>(server);
-  React.useEffect(() => {
-    setValue(client);
-  }, [client]);
-
-  return value;
+// useClientOnlyValue.web.ts - Web 专用版本
+// 在 Web 构建时直接使用客户端值，避免 SSR 问题
+export function useClientOnlyValue<S, C>(_server: S, client: C): C {
+  return client;
 }
