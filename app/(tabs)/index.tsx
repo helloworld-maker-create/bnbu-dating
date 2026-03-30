@@ -1,336 +1,826 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
-  ActivityIndicator,
   Dimensions,
-  ImageBackground,
+  Image,
   Platform,
   Pressable,
   SafeAreaView,
   StyleSheet,
   Text,
   View,
+  Animated,
+  TextInput,
+  ScrollView,
 } from 'react-native';
-import Swiper from 'react-native-deck-swiper';
-
-// !!! 请把 YOUR_IP 替换为你电脑在同一局域网下的真实 IP（手机/模拟器才能访问到）
-export const API_BASE_URL = 'http://YOUR_IP:8080';
-
-type MatchCard = {
-  id: string;
-  name: string;
-  major: string;
-  gpaLevel: string;
-  hobbies: string[];
-  goals: string[];
-  image: string;
-};
-
-type ApiResult<T> = { code: number; message: string; data: T };
+import { Ionicons } from '@expo/vector-icons';
+import Colors from '@/constants/Colors';
+import { useColorScheme } from '@/components/useColorScheme';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
-const CARD_WIDTH = Math.min(SCREEN_WIDTH - 32, 420);
-const CARD_HEIGHT = Math.min(SCREEN_HEIGHT * 0.72, 620);
 
-export default function MatchFeedScreen() {
-  const swiperRef = useRef<any>(null);
+// 通话状态枚举
+type CallState = 'idle' | 'matching' | 'connected';
 
-  const [cards, setCards] = useState<MatchCard[]>([]);
-  const [loading, setLoading] = useState(true);
+// 聊天消息类型
+type ChatMessage = {
+  id: string;
+  text: string;
+  isSelf: boolean;
+  timestamp: Date;
+};
 
+// 模拟对方数据
+const MOCK_PARTNER = {
+  id: '1',
+  name: '对方',
+  avatar: 'https://picsum.photos/400/400?random=1',
+};
+
+export default function VideoCallScreen() {
+  const colorScheme = useColorScheme();
+  const colors = Colors[colorScheme ?? 'light'];
+
+  // 状态管理
+  const [callState, setCallState] = useState<CallState>('idle');
+  const [isMuted, setIsMuted] = useState(false);
+  const [isCameraOff, setIsCameraOff] = useState(false);
+  const [blurLevel, setBlurLevel] = useState(20); // 模糊级别 (0-20)
+  const [messageCount, setMessageCount] = useState(0); // 消息计数
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [inputText, setInputText] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
+  const [showKeyboard, setShowKeyboard] = useState(false);
+
+  // 动画引用
+  const snowOpacity = useRef(new Animated.Value(1)).current;
+  const dotsRotation = useRef(new Animated.Value(0)).current;
+  const blurAnim = useRef(new Animated.Value(20)).current;
+
+  // 雪花动画
   useEffect(() => {
-    let cancelled = false;
-
-    async function load() {
-      setLoading(true);
-      try {
-        // 约定：后端返回 Result<List<UserProfile>>，其中 hobbies/goals 为 JSON 字符串
-        const res = await fetch(`${API_BASE_URL}/api/profiles/all`);
-        const json: ApiResult<any[]> = await res.json();
-
-        if (!res.ok) {
-          throw new Error(`HTTP ${res.status}`);
-        }
-        if (!json || typeof json.code !== 'number') {
-          throw new Error('后端响应格式不正确');
-        }
-        if (json.code !== 0) {
-          throw new Error(json.message || '后端返回错误');
-        }
-
-        const list = Array.isArray(json.data) ? json.data : [];
-        const mapped: MatchCard[] = list
-          .filter((p) => p && (p.userId ?? p.id) != null)
-          .map((p) => {
-            const userId = String(p.userId ?? p.id);
-            return {
-              id: userId,
-              name: String(p.nickname || `用户 ${userId}`),
-              major: String(p.major || '未填写专业'),
-              gpaLevel: String(p.gpaLevel || '未填写 GPA 区间'),
-              hobbies: normalizeStringArray(p.hobbies),
-              goals: normalizeStringArray(p.goals),
-              image: `https://picsum.photos/800/1200?random=${encodeURIComponent(userId)}`,
-            };
-          });
-
-        if (!cancelled) setCards(mapped);
-      } catch (e) {
-        console.log('加载推荐失败', e);
-        if (!cancelled) setCards([]);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
+    if (callState === 'idle') {
+      const animate = () => {
+        Animated.sequence([
+          Animated.timing(snowOpacity, {
+            toValue: 0.7,
+            duration: 100,
+            useNativeDriver: true,
+          }),
+          Animated.timing(snowOpacity, {
+            toValue: 1,
+            duration: 100,
+            useNativeDriver: true,
+          }),
+        ]).start(() => animate());
+      };
+      animate();
     }
+  }, [callState]);
 
-    load();
-    return () => {
-      cancelled = true;
+  // 加载点旋转动画
+  useEffect(() => {
+    if (callState === 'matching') {
+      Animated.loop(
+        Animated.timing(dotsRotation, {
+          toValue: 1,
+          duration: 1500,
+          useNativeDriver: true,
+        })
+      ).start();
+    }
+  }, [callState]);
+
+  // 模糊动画
+  useEffect(() => {
+    Animated.timing(blurAnim, {
+      toValue: blurLevel,
+      duration: 500,
+      useNativeDriver: false,
+    }).start();
+  }, [blurLevel]);
+
+  // 模拟匹配成功
+  useEffect(() => {
+    if (callState === 'matching') {
+      const timer = setTimeout(() => {
+        setCallState('connected');
+        // 模拟对方发送第一条消息
+        setTimeout(() => {
+          addMessage('你好呀！很高兴认识你～', false);
+        }, 2000);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [callState]);
+
+  // 检查是否应该清除模糊
+  useEffect(() => {
+    if (messageCount >= 10 && blurLevel > 0) {
+      const timer = setTimeout(() => {
+        setBlurLevel(prev => Math.max(0, prev - 2));
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [messageCount, blurLevel]);
+
+  // 添加消息
+  const addMessage = (text: string, isSelf: boolean) => {
+    const newMessage: ChatMessage = {
+      id: Date.now().toString(),
+      text,
+      isSelf,
+      timestamp: new Date(),
     };
-  }, []);
+    setMessages(prev => [...prev, newMessage]);
+    if (isSelf) {
+      setMessageCount(prev => prev + 1);
+      // 模拟对方回复
+      simulateReply();
+    }
+  };
 
-  const hasCards = cards.length > 0;
+  // 模拟对方回复
+  const simulateReply = () => {
+    const replies = [
+      '哈哈，真的吗？',
+      '我也是！',
+      '好巧啊～',
+      '你在哪个校区呀？',
+      '这是什么专业？',
+      '听起来很有趣！',
+    ];
+    setTimeout(() => {
+      const randomReply = replies[Math.floor(Math.random() * replies.length)];
+      addMessage(randomReply, false);
+    }, 1500 + Math.random() * 1000);
+  };
+
+  // 处理发送消息
+  const handleSendMessage = () => {
+    if (inputText.trim()) {
+      addMessage(inputText.trim(), true);
+      setInputText('');
+    }
+  };
+
+  // 处理开始匹配
+  const handleStart = () => {
+    setCallState('matching');
+    setMessages([]);
+    setMessageCount(0);
+    setBlurLevel(20);
+  };
+
+  // 处理停止/下一个
+  const handleStop = () => {
+    if (callState === 'connected') {
+      setCallState('matching');
+      setMessages([]);
+      setMessageCount(0);
+      setBlurLevel(20);
+    } else {
+      setCallState('idle');
+    }
+  };
+
+  // 渲染雪花效果
+  const renderSnowEffect = () => {
+    // 生成随机雪花点
+    const snowflakes = Array.from({ length: 100 }, (_, i) => ({
+      id: i,
+      left: Math.random() * 100 + '%',
+      delay: Math.random() * 3,
+      duration: 2 + Math.random() * 2,
+    }));
+
+    return (
+      <View style={styles.snowContainer}>
+        {snowflakes.map(flake => (
+          <View
+            key={flake.id}
+            style={[
+              styles.snowflake,
+              {
+                left: flake.left,
+                opacity: 0.3 + Math.random() * 0.5,
+              },
+            ]}
+          />
+        ))}
+      </View>
+    );
+  };
+
+  // 渲染加载点
+  const renderLoadingDots = () => {
+    const dots = Array.from({ length: 6 }, (_, i) => i);
+    return (
+      <View style={styles.loadingDotsContainer}>
+        {dots.map((_, i) => {
+          const angle = (i * 60 * Math.PI) / 180;
+          const radius = 40;
+          return (
+            <View
+              key={i}
+              style={[
+                styles.loadingDot,
+                {
+                  transform: [
+                    {
+                      rotate: dotsRotation.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: ['0deg', '360deg'],
+                      }),
+                    },
+                    {
+                      translateX: Math.cos(angle) * radius,
+                    },
+                    {
+                      translateY: Math.sin(angle) * radius,
+                    },
+                  ],
+                },
+              ]}
+            />
+          );
+        })}
+      </View>
+    );
+  };
+
+  // 渲染视频画面
+  const renderVideoView = (isRemote: boolean, showBlur: boolean) => {
+    const blurStyle = showBlur
+      ? { filter: `blur(${blurLevel}px)` }
+      : {};
+
+    return (
+      <View style={styles.videoView}>
+        <Image
+          source={{ uri: MOCK_PARTNER.avatar }}
+          style={[styles.videoImage, blurStyle]}
+          resizeMode="cover"
+        />
+        {showBlur && blurLevel > 10 && (
+          <View style={styles.blurOverlay}>
+            <Ionicons name="eye-off" size={32} color="rgba(255,255,255,0.8)" />
+            <Text style={styles.blurText}>聊更多以看清对方</Text>
+          </View>
+        )}
+      </View>
+    );
+  };
+
+  // 渲染空闲状态 (类似 Ome TV 左侧)
+  const renderIdleScreen = () => (
+    <View style={[styles.screenContainer, { backgroundColor: '#1a1a1a' }]}>
+      {renderSnowEffect()}
+
+      {/* Ome TV 风格的 Logo */}
+      <View style={styles.logoContainer}>
+        <View style={[styles.tvIcon, { backgroundColor: colors.primary }]}>
+          <View style={styles.tvAntenna}>
+            <View style={styles.antennaLeft} />
+            <View style={styles.antennaRight} />
+          </View>
+          <View style={styles.tvScreen}>
+            <Text style={styles.tvText}>Date</Text>
+            <Text style={[styles.tvText, { color: '#4CAF50', fontSize: 20 }]}>BNBU</Text>
+          </View>
+          <View style={styles.tvButtons}>
+            <View style={styles.tvButton} />
+            <View style={styles.tvButton} />
+          </View>
+        </View>
+        <Text style={styles.logoText}>Date in BNBU</Text>
+      </View>
+
+      {/* 在线人数 */}
+      <View style={styles.onlineCount}>
+        <View style={styles.onlineDot} />
+        <Text style={styles.onlineText}>293,025 用户在线</Text>
+      </View>
+
+      {/* 开始按钮 */}
+      <Pressable
+        onPress={handleStart}
+        style={[styles.startButtonLarge, { backgroundColor: '#4CAF50' }]}
+      >
+        <Text style={styles.startButtonText}>开始</Text>
+      </Pressable>
+    </View>
+  );
+
+  // 渲染匹配中状态
+  const renderMatchingScreen = () => (
+    <View style={[styles.screenContainer, { backgroundColor: '#1a1a1a' }]}>
+      <View style={styles.matchingCenter}>
+        {renderLoadingDots()}
+        <Text style={styles.matchingText}>正在匹配...</Text>
+        <Text style={styles.matchingSubtext}>寻找合适的 TA</Text>
+      </View>
+    </View>
+  );
+
+  // 渲染通话中状态 (类似 Ome TV 右侧)
+  const renderConnectedScreen = () => {
+    const isBlurred = blurLevel > 0;
+
+    return (
+      <View style={styles.connectedContainer}>
+        {/* 视频区域 - 上下分屏 */}
+        <View style={styles.videoSplitContainer}>
+          {/* 上方：自己的摄像头 */}
+          <View style={styles.localVideoContainer}>
+            <View style={[styles.videoPlaceholder, { backgroundColor: '#2a2a2a' }]}>
+              {isCameraOff ? (
+                <Ionicons name="videocam-off" size={48} color="#666" />
+              ) : (
+                <>
+                  <View style={styles.cameraPlaceholderContent}>
+                    <Ionicons name="person" size={60} color="#444" />
+                  </View>
+                  <Text style={styles.videoLabel}>你</Text>
+                </>
+              )}
+            </View>
+            {/* 静音指示器 */}
+            {isMuted && (
+              <View style={styles.muteBadge}>
+                <Ionicons name="mic-off" size={14} color="#fff" />
+              </View>
+            )}
+          </View>
+
+          {/* 分隔线 */}
+          <View style={styles.separatorLine} />
+
+          {/* 下方：对方的摄像头 */}
+          <View style={styles.remoteVideoContainer}>
+            {callState === 'matching' ? (
+              <View style={[styles.videoPlaceholder, { backgroundColor: '#2a2a2a', alignItems: 'center', justifyContent: 'center' }]}>
+                {renderLoadingDots()}
+                <Text style={styles.videoLabel}>匹配中...</Text>
+              </View>
+            ) : (
+              <>
+                {renderVideoView(true, isBlurred)}
+                {isBlurred && (
+                  <View style={styles.progressContainer}>
+                    <Text style={styles.progressText}>
+                      已发送 {messageCount}/10 条消息
+                    </Text>
+                    <View style={styles.progressBar}>
+                      <View
+                        style={[
+                          styles.progressFill,
+                          { width: `${Math.min(100, (messageCount / 10) * 100)}%` },
+                        ]}
+                      />
+                    </View>
+                  </View>
+                )}
+                {!isBlurred && (
+                  <View style={styles.unblurredBadge}>
+                    <Ionicons name="checkmark-circle" size={20} color="#4CAF50" />
+                    <Text style={styles.unblurredText}>已解锁清晰画面</Text>
+                  </View>
+                )}
+              </>
+            )}
+          </View>
+        </View>
+
+        {/* 聊天区域 */}
+        <View style={styles.chatContainer}>
+          <ScrollView
+            style={styles.messagesScrollView}
+            contentContainerStyle={styles.messagesContent}
+          >
+            {messages.map((msg) => (
+              <View
+                key={msg.id}
+                style={[
+                  styles.messageBubble,
+                  msg.isSelf
+                    ? { backgroundColor: colors.primary, alignSelf: 'flex-end' }
+                    : { backgroundColor: '#3a3a3a', alignSelf: 'flex-start' },
+                ]}
+              >
+                <Text style={styles.messageText}>{msg.text}</Text>
+              </View>
+            ))}
+          </ScrollView>
+
+          {/* 输入框 */}
+          <View style={styles.inputContainer}>
+            <TextInput
+              style={[
+                styles.textInput,
+                { backgroundColor: '#3a3a3a', color: colors.text },
+              ]}
+              placeholder="写一条消息..."
+              placeholderTextColor="#666"
+              value={inputText}
+              onChangeText={setInputText}
+              onSubmitEditing={handleSendMessage}
+              blurOnSubmit={false}
+              onFocus={() => setShowKeyboard(true)}
+              onBlur={() => setShowKeyboard(false)}
+            />
+            <Pressable onPress={handleSendMessage} style={styles.sendButton}>
+              <Ionicons name="send" size={20} color={colors.primary} />
+            </Pressable>
+          </View>
+        </View>
+
+        {/* 底部控制栏 */}
+        <View style={styles.bottomControls}>
+          <Pressable
+            onPress={() => setIsMuted(!isMuted)}
+            style={[
+              styles.controlBtn,
+              isMuted ? { backgroundColor: '#ff4444' } : { backgroundColor: '#3a3a3a' },
+            ]}
+          >
+            <Ionicons
+              name={isMuted ? 'mic-off' : 'mic'}
+              size={24}
+              color="#fff"
+            />
+          </Pressable>
+
+          <Pressable
+            onPress={() => setIsCameraOff(!isCameraOff)}
+            style={[
+              styles.controlBtn,
+              isCameraOff ? { backgroundColor: '#ff4444' } : { backgroundColor: '#3a3a3a' },
+            ]}
+          >
+            <Ionicons
+              name={isCameraOff ? 'videocam-off' : 'videocam'}
+              size={24}
+              color="#fff"
+            />
+          </Pressable>
+
+          <Pressable
+            onPress={handleStop}
+            style={[styles.controlBtn, { backgroundColor: '#ff6b6b' }]}
+          >
+            <Text style={styles.stopButtonText}>
+              {callState === 'connected' ? '下一个' : '停止'}
+            </Text>
+          </Pressable>
+        </View>
+      </View>
+    );
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
-        {loading ? (
-          <View style={styles.centerState}>
-            <ActivityIndicator size="large" color="#3B82F6" />
-          </View>
-        ) : !hasCards ? (
-          <View style={styles.centerState}>
-            <Text style={styles.emptyText}>当前没有更多推荐</Text>
-          </View>
-        ) : (
-          <>
-            <View style={styles.swiperWrap}>
-              <Swiper
-                ref={swiperRef}
-                cards={cards}
-                cardIndex={0}
-                backgroundColor="transparent"
-                stackSize={3}
-                stackSeparation={12}
-                verticalSwipe={false}
-                onSwipedLeft={(index) => console.log('PASS', cards[index]?.id)}
-                onSwipedRight={(index) => console.log('LIKE', cards[index]?.id)}
-                onSwipedAll={() => console.log('SWIPED_ALL')}
-                renderCard={(card) => <ProfileCard card={card} />}
-                cardVerticalMargin={0}
-                cardHorizontalMargin={0}
-                containerStyle={styles.swiperContainer}
-                cardStyle={styles.cardContainer}
-                animateCardOpacity
-                disableTopSwipe
-                disableBottomSwipe
-              />
-            </View>
-
-            <View style={styles.actions}>
-              <CircleActionButton
-                label="✖️"
-                color="#FF3B30"
-                onPress={() => swiperRef.current?.swipeLeft?.()}
-                accessibilityLabel="Pass"
-              />
-              <CircleActionButton
-                label="♥️"
-                color="#34C759"
-                onPress={() => swiperRef.current?.swipeRight?.()}
-                accessibilityLabel="Like"
-              />
-            </View>
-          </>
-        )}
-      </View>
+      {callState === 'idle' && renderIdleScreen()}
+      {callState === 'matching' && renderMatchingScreen()}
+      {callState === 'connected' && renderConnectedScreen()}
     </SafeAreaView>
   );
 }
 
-function normalizeStringArray(input: unknown): string[] {
-  if (Array.isArray(input)) {
-    return input.map((x) => String(x)).filter(Boolean);
-  }
-  if (typeof input === 'string') {
-    const s = input.trim();
-    if (!s) return [];
-    // 兼容后端以 JSON 字符串存储：'["吉他","健身"]'
-    if (s.startsWith('[')) {
-      try {
-        const arr = JSON.parse(s);
-        if (Array.isArray(arr)) return arr.map((x) => String(x)).filter(Boolean);
-      } catch {}
-    }
-    // 兼容逗号分隔字符串
-    return s
-      .split(',')
-      .map((x) => x.trim())
-      .filter(Boolean);
-  }
-  return [];
-}
-
-function ProfileCard({ card }: { card: MatchCard }) {
-  if (!card) return <View style={styles.cardFallback} />;
-
-  const tags = [card.gpaLevel, ...card.hobbies, ...card.goals].filter(Boolean);
-
-  return (
-    <View style={styles.card}>
-      <ImageBackground source={{ uri: card.image }} style={styles.cardImage} imageStyle={styles.cardImageRadius}>
-        <View style={styles.gradient}>
-          <View style={styles.gradientLayerStrong} />
-          <View style={styles.gradientLayerMid} />
-          <View style={styles.gradientLayerLight} />
-        </View>
-
-        <View style={styles.cardContent}>
-          <Text style={styles.nameLine}>
-            {card.name}
-            <Text style={styles.dot}> · </Text>
-            <Text style={styles.major}>{card.major}</Text>
-          </Text>
-
-          <View style={styles.badgesWrap}>
-            {tags.map((t, idx) => (
-              <View key={`${card.id}-${t}-${idx}`} style={styles.badge}>
-                <Text style={styles.badgeText}>{t}</Text>
-              </View>
-            ))}
-          </View>
-        </View>
-      </ImageBackground>
-    </View>
-  );
-}
-
-function CircleActionButton({
-  label,
-  color,
-  onPress,
-  accessibilityLabel,
-}: {
-  label: string;
-  color: string;
-  onPress: () => void;
-  accessibilityLabel: string;
-}) {
-  return (
-    <Pressable
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityLabel={accessibilityLabel}
-      style={({ pressed }) => [
-        styles.actionBtn,
-        { backgroundColor: color },
-        pressed && { transform: [{ scale: 0.98 }], opacity: 0.92 },
-      ]}>
-      <Text style={styles.actionBtnText}>{label}</Text>
-    </Pressable>
-  );
-}
-
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#0B0B0F' },
-  container: { flex: 1, paddingHorizontal: 16, paddingTop: 12, paddingBottom: 18 },
+  safeArea: { flex: 1 },
+  screenContainer: { flex: 1, alignItems: 'center', justifyContent: 'center' },
 
-  centerState: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  emptyText: { color: 'rgba(255,255,255,0.72)', fontSize: 16, fontWeight: '700' },
-
-  swiperWrap: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  swiperContainer: { flex: 1, width: '100%', alignItems: 'center', justifyContent: 'center' },
-  cardContainer: {
-    width: CARD_WIDTH,
-    height: CARD_HEIGHT,
-    alignSelf: 'center',
-  },
-
-  card: {
-    flex: 1,
-    borderRadius: 20,
-    overflow: 'hidden',
-    backgroundColor: '#111218',
-    shadowColor: '#000',
-    shadowOpacity: 0.35,
-    shadowRadius: 18,
-    shadowOffset: { width: 0, height: 10 },
-    elevation: 14,
-  },
-  cardImage: { flex: 1 },
-  cardImageRadius: { borderRadius: 20 },
-  cardFallback: {
-    width: CARD_WIDTH,
-    height: CARD_HEIGHT,
-    borderRadius: 20,
-    backgroundColor: '#111218',
-  },
-
-  gradient: { ...StyleSheet.absoluteFillObject, justifyContent: 'flex-end' },
-  gradientLayerStrong: { height: 120, backgroundColor: 'rgba(0,0,0,0.78)' },
-  gradientLayerMid: { height: 90, backgroundColor: 'rgba(0,0,0,0.45)' },
-  gradientLayerLight: { height: 70, backgroundColor: 'rgba(0,0,0,0.18)' },
-
-  cardContent: {
+  // 雪花效果
+  snowContainer: {
     position: 'absolute',
-    left: 16,
-    right: 16,
-    bottom: 18,
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    overflow: 'hidden',
   },
-  nameLine: {
-    color: '#FFFFFF',
-    fontSize: 28,
-    fontWeight: '800',
-    letterSpacing: 0.2,
-    textShadowColor: 'rgba(0,0,0,0.35)',
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 10,
+  snowflake: {
+    position: 'absolute',
+    width: 4,
+    height: 4,
+    backgroundColor: '#fff',
+    borderRadius: 2,
+    top: -10,
   },
-  dot: { color: 'rgba(255,255,255,0.7)' },
-  major: { color: 'rgba(255,255,255,0.92)', fontWeight: '700', fontSize: 18 },
 
-  badgesWrap: {
-    marginTop: 10,
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-  },
-  badge: {
-    paddingVertical: 7,
-    paddingHorizontal: 10,
-    borderRadius: 999,
-    marginRight: 8,
-    marginBottom: 8,
-    backgroundColor: 'rgba(255,255,255,0.16)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.18)',
-    ...(Platform.OS === 'ios'
-      ? {
-          shadowColor: '#000',
-          shadowOpacity: 0.18,
-          shadowRadius: 10,
-          shadowOffset: { width: 0, height: 6 },
-        }
-      : null),
-  },
-  badgeText: { color: 'rgba(255,255,255,0.92)', fontSize: 12, fontWeight: '700' },
-
-  actions: {
-    paddingTop: 14,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: 44,
+  // Logo 区域
+  logoContainer: {
     alignItems: 'center',
+    marginBottom: 40,
   },
-  actionBtn: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
+  tvIcon: {
+    width: 140,
+    height: 100,
+    borderRadius: 20,
+    position: 'relative',
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
-    shadowOpacity: 0.28,
-    shadowRadius: 14,
-    shadowOffset: { width: 0, height: 10 },
-    elevation: 10,
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 8,
   },
-  actionBtnText: { fontSize: 24, color: '#fff', fontWeight: '900' },
+  tvAntenna: {
+    position: 'absolute',
+    top: -20,
+    flexDirection: 'row',
+  },
+  antennaLeft: {
+    width: 3,
+    height: 20,
+    backgroundColor: '#fff',
+    transform: [{ rotate: '-30deg' }],
+    marginLeft: 30,
+  },
+  antennaRight: {
+    width: 3,
+    height: 20,
+    backgroundColor: '#fff',
+    transform: [{ rotate: '30deg' }],
+    marginRight: 30,
+  },
+  tvScreen: {
+    backgroundColor: '#fff',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  tvText: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: '#D4A574',
+  },
+  tvButtons: {
+    position: 'absolute',
+    right: 15,
+    bottom: 15,
+    flexDirection: 'row',
+    gap: 6,
+  },
+  tvButton: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: 'rgba(255,255,255,0.8)',
+  },
+  logoText: {
+    color: '#fff',
+    fontSize: 24,
+    fontWeight: '600',
+    marginTop: 15,
+  },
+
+  // 在线人数
+  onlineCount: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 30,
+  },
+  onlineDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#4CAF50',
+  },
+  onlineText: {
+    color: '#aaa',
+    fontSize: 14,
+  },
+
+  // 开始按钮
+  startButtonLarge: {
+    paddingHorizontal: 60,
+    paddingVertical: 18,
+    borderRadius: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  startButtonText: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#fff',
+  },
+
+  // 匹配中
+  matchingCenter: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loadingDotsContainer: {
+    width: 100,
+    height: 100,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
+  },
+  loadingDot: {
+    position: 'absolute',
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: '#D4A574',
+  },
+  matchingText: {
+    color: '#fff',
+    fontSize: 20,
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  matchingSubtext: {
+    color: '#888',
+    fontSize: 14,
+  },
+
+  // 通话中
+  connectedContainer: {
+    flex: 1,
+    backgroundColor: '#1a1a1a',
+  },
+  videoSplitContainer: {
+    flex: 1,
+    flexDirection: 'column',
+  },
+  localVideoContainer: {
+    flex: 1,
+    position: 'relative',
+    backgroundColor: '#000',
+  },
+  remoteVideoContainer: {
+    flex: 1,
+    position: 'relative',
+    backgroundColor: '#000',
+  },
+  separatorLine: {
+    height: 1,
+    backgroundColor: '#333',
+  },
+  videoPlaceholder: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cameraPlaceholderContent: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  videoLabel: {
+    color: '#888',
+    fontSize: 14,
+    marginTop: 8,
+  },
+  muteBadge: {
+    position: 'absolute',
+    bottom: 10,
+    right: 10,
+    backgroundColor: '#ff4444',
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  videoView: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  videoImage: {
+    flex: 1,
+    width: '100%',
+    height: '100%',
+  },
+  blurOverlay: {
+    position: 'absolute',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  blurText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+
+  // 进度条
+  progressContainer: {
+    position: 'absolute',
+    bottom: 20,
+    left: 20,
+    right: 20,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 12,
+    gap: 8,
+  },
+  progressText: {
+    color: '#fff',
+    fontSize: 13,
+    textAlign: 'center',
+  },
+  progressBar: {
+    height: 6,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    borderRadius: 3,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    backgroundColor: '#4CAF50',
+    borderRadius: 3,
+  },
+  unblurredBadge: {
+    position: 'absolute',
+    bottom: 20,
+    left: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  unblurredText: {
+    color: '#fff',
+    fontSize: 13,
+  },
+
+  // 聊天区域
+  chatContainer: {
+    height: 200,
+    backgroundColor: '#2a2a2a',
+    borderTopWidth: 1,
+    borderTopColor: '#333',
+  },
+  messagesScrollView: {
+    flex: 1,
+    paddingHorizontal: 12,
+  },
+  messagesContent: {
+    paddingVertical: 10,
+    gap: 8,
+  },
+  messageBubble: {
+    maxWidth: '75%',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 16,
+  },
+  messageText: {
+    color: '#fff',
+    fontSize: 14,
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingBottom: 10,
+    gap: 10,
+  },
+  textInput: {
+    flex: 1,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
+    fontSize: 14,
+  },
+  sendButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#3a3a3a',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  // 底部控制栏
+  bottomControls: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 20,
+    paddingVertical: 15,
+    backgroundColor: '#2a2a2a',
+  },
+  controlBtn: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  stopButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
 });
