@@ -1,0 +1,57 @@
+[
+  {
+    "id": "u1001",
+    "realName": "Alice",
+    "major": "Computer Science",
+    "gpaGoal": "3.8/4.0",
+    "gradSchoolGoal": "MS in AI in the US",
+    "careerDirection": "AI Engineer",
+    "academicTags": ["machine learning", "research", "hackathon"],
+    "hobbies": ["badminton", "guitar"],
+    "isVerified": true
+  },
+  {
+    "id": "u1002",
+    "realName": "Brian",
+    "major": "Data Science",
+    "gpaGoal": "3.7/4.0",
+    "gradSchoolGoal": "MS in the US",
+    "careerDirection": "ML Engineer",
+    "academicTags": ["machine learning", "research", "python"],
+    "hobbies": ["badminton", "photography"],
+    "isVerified": true
+  },
+  {
+    "id": "u1003",
+    "realName": "Carol",
+    "major": "Finance",
+    "gpaGoal": "3.9/4.0",
+    "gradSchoolGoal": "Job after graduation",
+    "careerDirection": "Investment Banking",
+    "academicTags": ["case competition", "finance", "presentation"],
+    "hobbies": ["running", "travel"],
+    "isVerified": true
+  },
+  {
+    "id": "u1004",
+    "realName": "David",
+    "major": "Software Engineering",
+    "gpaGoal": "3.6/4.0",
+    "gradSchoolGoal": "MS in AI in the US",
+    "careerDirection": "Software Engineer",
+    "academicTags": ["backend", "hackathon", "research"],
+    "hobbies": ["guitar", "basketball"],
+    "isVerified": true
+  },
+  {
+    "id": "u1005",
+    "realName": "Eve",
+    "major": "Computer Science",
+    "gpaGoal": "90%",
+    "gradSchoolGoal": "PhD in the US",
+    "careerDirection": "Researcher",
+    "academicTags": ["machine learning", "paper reading", "research"],
+    "hobbies": ["chess", "guitar"],
+    "isVerified": false
+  }
+]
