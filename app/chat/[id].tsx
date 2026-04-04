@@ -13,7 +13,6 @@ import {
   TextInput,
   View,
   ActivityIndicator,
-  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, router } from 'expo-router';
@@ -21,11 +20,20 @@ import { useLocalSearchParams, router } from 'expo-router';
 import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
 import { useAuth } from '@/contexts/AuthContext';
+import {
+  getMessages,
+  addMessage as addPersistentMessage,
+  getOrCreateConversation,
+  updateConversation,
+  generateConversationId,
+  formatTime,
+  markMessagesAsRead,
+} from '@/utils/MessageStorage';
 
 // ============================================
 // 数据类型定义
 // ============================================
-type Message = {
+type ChatMessage = {
   id: string;
   senderId: string;
   text: string;
@@ -38,68 +46,6 @@ type ChatUser = {
   avatar: string;
   major: string;
   online: boolean;
-};
-
-// ============================================
-// 模拟数据
-// ============================================
-const USE_MOCK_DATA = true;
-
-const MOCK_USERS: Record<string, ChatUser> = {
-  '1': {
-    id: '1',
-    name: '小李',
-    avatar: 'https://picsum.photos/200/200?random=1',
-    major: '计算机科学与技术',
-    online: true,
-  },
-  '2': {
-    id: '2',
-    name: '小王',
-    avatar: 'https://picsum.photos/200/200?random=2',
-    major: '英语专业',
-    online: false,
-  },
-  '3': {
-    id: '3',
-    name: '小张',
-    avatar: 'https://picsum.photos/200/200?random=3',
-    major: '工商管理',
-    online: true,
-  },
-  '4': {
-    id: '4',
-    name: '小赵',
-    avatar: 'https://picsum.photos/200/200?random=4',
-    major: '艺术设计',
-    online: false,
-  },
-};
-
-const MOCK_MESSAGES: Record<string, Message[]> = {
-  '1': [
-    { id: '1', senderId: 'other', text: '你好！看到你的资料，发现我们也都喜欢编程～', timestamp: '10:30' },
-    { id: '2', senderId: 'me', text: '是啊！你平时用什么语言比较多？', timestamp: '10:32' },
-    { id: '3', senderId: 'other', text: '我主要用 Python 和 JavaScript，最近在学习 Rust', timestamp: '10:33' },
-    { id: '4', senderId: 'other', text: '你最喜欢什么编程语言？', timestamp: '10:33' },
-  ],
-  '2': [
-    { id: '1', senderId: 'me', text: '你好，对你的专业很感兴趣！', timestamp: '昨天' },
-    { id: '2', senderId: 'other', text: '谢谢！英语专业其实很有趣，可以了解不同文化', timestamp: '昨天' },
-    { id: '3', senderId: 'other', text: '周末有空一起去看展览吗？', timestamp: '1 小时前' },
-  ],
-  '3': [
-    { id: '1', senderId: 'other', text: '听说你也很喜欢看电影？', timestamp: '2 天前' },
-    { id: '2', senderId: 'me', text: '对啊！最近有什么好推荐的吗？', timestamp: '2 天前' },
-    { id: '3', senderId: 'other', text: '《奥本海默》很不错！', timestamp: '2 天前' },
-    { id: '4', senderId: 'me', text: '好的，我记下了！', timestamp: '2 天前' },
-    { id: '5', senderId: 'other', text: '哈哈，我也很喜欢那部电影！', timestamp: '昨天' },
-  ],
-  '4': [
-    { id: '1', senderId: 'me', text: '你的设计作品真的很棒！', timestamp: '3 天前' },
-    { id: '2', senderId: 'other', text: '谢谢夸奖！很高兴你喜欢', timestamp: '3 天前' },
-    { id: '3', senderId: 'other', text: '你的作品真的很棒', timestamp: '2 天前' },
-  ],
 };
 
 // AI Icebreaker 提示语
@@ -115,18 +61,19 @@ const ICEBREAKERS = [
 // 消息气泡组件
 // ============================================
 interface MessageBubbleProps {
-  message: Message;
+  message: ChatMessage;
   isMe: boolean;
+  chatUser: ChatUser | null;
   colors: typeof Colors.light;
 }
 
-const MessageBubble: React.FC<MessageBubbleProps> = ({ message, isMe, colors }) => {
+const MessageBubble: React.FC<MessageBubbleProps> = ({ message, isMe, chatUser, colors }) => {
   return (
     <View style={[styles.messageRow, isMe ? styles.messageRowMe : styles.messageRowOther]}>
-      {!isMe && (
+      {!isMe && chatUser && (
         <View style={styles.senderAvatar}>
           <Image
-            source={{ uri: MOCK_MESSAGES[message.senderId] ? 'https://picsum.photos/100/100?random=' + message.senderId : 'https://picsum.photos/100/100?random=other' }}
+            source={{ uri: chatUser.avatar }}
             style={styles.miniAvatar}
             resizeMode="cover"
           />
@@ -171,10 +118,9 @@ export default function ChatScreen() {
   const { userId } = useAuth();
 
   const [chatUser, setChatUser] = useState<ChatUser | null>(null);
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputText, setInputText] = useState('');
   const [loading, setLoading] = useState(true);
-  const [isTyping, setIsTyping] = useState(false);
 
   const flatListRef = useRef<FlatList>(null);
   const inputRef = useRef<TextInput>(null);
@@ -184,39 +130,56 @@ export default function ChatScreen() {
 
     async function loadChat() {
       setLoading(true);
-      if (USE_MOCK_DATA) {
-        await new Promise(resolve => setTimeout(resolve, 300));
-        if (!cancelled) {
-          const user = MOCK_USERS[id] || {
-            id,
-            name: '用户',
-            avatar: 'https://picsum.photos/200/200?random=' + id,
-            major: '未知专业',
-            online: false,
-          };
-          setChatUser(user);
-          setMessages(MOCK_MESSAGES[id] || []);
-          setLoading(false);
-        }
-        return;
+      try {
+        // 从 MessageStorage 加载消息
+        const storedMessages = await getMessages(id);
+
+        // 转换为 ChatMessage 格式
+        const formattedMessages: ChatMessage[] = storedMessages.map(msg => ({
+          id: msg.id,
+          senderId: msg.senderId === userId?.toString() ? 'me' : 'other',
+          text: msg.text,
+          timestamp: formatTime(msg.timestamp),
+        }));
+
+        setMessages(formattedMessages);
+
+        // 设置聊天用户（从存储中获取或创建）
+        // 实际项目中这里应该从用户服务获取对方信息
+        const otherUserId = id.split('_').find(uid => uid !== userId?.toString()) || id;
+        setChatUser({
+          id: otherUserId,
+          name: '用户',
+          avatar: `https://picsum.photos/200/200?random=${otherUserId}`,
+          major: '未知专业',
+          online: false,
+        });
+
+        // 标记为已读
+        await markMessagesAsRead(id);
+      } catch (error) {
+        console.error('加载聊天失败:', error);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     }
     loadChat();
     return () => { cancelled = true; };
   }, [id]);
 
   // 发送消息
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!inputText.trim()) return;
 
-    const newMessage: Message = {
+    const currentUserId = userId?.toString() || 'me';
+    const newMessage: ChatMessage = {
       id: Date.now().toString(),
       senderId: 'me',
       text: inputText.trim(),
       timestamp: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
     };
 
+    // 更新 UI
     setMessages(prev => [...prev, newMessage]);
     setInputText('');
     Keyboard.dismiss();
@@ -226,42 +189,63 @@ export default function ChatScreen() {
       flatListRef.current?.scrollToEnd({ animated: true });
     }, 100);
 
-    // 模拟自动回复（仅用于测试）
-    setTimeout(() => {
-      const replies = ['嗯嗯，有道理！', '哈哈，好有趣～', '我也这么觉得！', '真的吗？多跟我讲讲！', '👍'];
-      const reply: Message = {
-        id: (Date.now() + 1).toString(),
-        senderId: 'other',
-        text: replies[Math.floor(Math.random() * replies.length)],
-        timestamp: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
+    // 保存到存储
+    try {
+      const messageToSave = {
+        id: newMessage.id,
+        conversationId: id,
+        senderId: currentUserId,
+        receiverId: id.split('_').find(uid => uid !== currentUserId) || 'other',
+        text: newMessage.text,
+        timestamp: Date.now(),
+        isRead: true,
       };
-      setMessages(prev => [...prev, reply]);
-    }, 2000);
+
+      await addPersistentMessage(messageToSave);
+
+      // 更新会话
+      const otherUser = chatUser || { id: 'other', name: '用户', avatar: '', major: '' };
+      await updateConversation(
+        {
+          id,
+          userId: otherUser.id,
+          userName: otherUser.name,
+          userAvatar: otherUser.avatar,
+          userMajor: otherUser.major,
+          lastMessage: newMessage.text,
+          lastMessageTime: Date.now(),
+          unreadCount: 0,
+        },
+        currentUserId,
+        currentUserId
+      );
+    } catch (error) {
+      console.error('保存消息失败:', error);
+    }
   };
 
   // AI 生成破冰开场白
+  const ICEBREAKERS = [
+    '看到你的资料，发现我们也喜欢某个爱好，最近有什么新发现吗？',
+    '你的专业很酷！是什么让你选择这个专业的？',
+    '如果用三个词形容自己，你会选哪三个？',
+    '周末一般喜欢做什么？有什么推荐的活动吗？',
+  ];
+
   const handleGenerateIcebreaker = () => {
     if (!chatUser) return;
 
     const template = ICEBREAKERS[Math.floor(Math.random() * ICEBREAKERS.length)];
-    let icebreaker = template;
-
-    // 简单替换占位符
-    if (chatUser.major) {
-      icebreaker = icebreaker.replace('{major}', chatUser.major);
-    }
-    icebreaker = icebreaker.replace('{hobby}', '音乐');
-    icebreaker = icebreaker.replace('{place}', '这里');
-
-    setInputText(icebreaker);
+    setInputText(template);
     inputRef.current?.focus();
   };
 
   // 渲染消息项
-  const renderMessage = ({ item }: { item: Message }) => (
+  const renderMessage = ({ item }: { item: ChatMessage }) => (
     <MessageBubble
       message={item}
       isMe={item.senderId === 'me'}
+      chatUser={chatUser}
       colors={colors}
     />
   );

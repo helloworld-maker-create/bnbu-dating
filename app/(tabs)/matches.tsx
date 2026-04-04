@@ -1,4 +1,5 @@
-// app/matches.tsx - 匹配列表页面
+// app/(tabs)/matches.tsx - 匹配列表页面
+// 遵循 UX 设计报告 - 咖啡/奶油暖色调系
 import React, { useEffect, useState } from 'react';
 import {
   FlatList,
@@ -30,13 +31,6 @@ type Match = {
   lastMessage?: string;
   timestamp?: string;
   unreadCount?: number;
-};
-
-type Message = {
-  id: string;
-  senderId: string;
-  text: string;
-  timestamp: string;
 };
 
 // ============================================
@@ -102,7 +96,7 @@ const MatchItem: React.FC<MatchItemProps> = ({ match, onPress, colors }) => {
       onPress={() => onPress(match.id)}
       style={({ pressed }) => [
         styles.matchItem,
-        { backgroundColor: colors.cardBackground },
+        { backgroundColor: colors.cardBackground, borderBottomColor: colors.separator },
         pressed && { backgroundColor: colors.tagBackground },
       ]}
     >
@@ -197,7 +191,9 @@ export default function MatchesScreen() {
   // 空状态
   const renderEmptyState = () => (
     <View style={[styles.emptyState, { backgroundColor: colors.background }]}>
-      <Ionicons name="chatbubbles-outline" size={64} color={colors.textMuted} />
+      <View style={[styles.emptyIconWrapper, { backgroundColor: colors.tagBackground }]}>
+        <Ionicons name="heart-outline" size={48} color={colors.primary} />
+      </View>
       <Text style={[styles.emptyTitle, { color: colors.text }]}>还没有匹配</Text>
       <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
         去探索页面发现更多有趣的人吧
@@ -240,6 +236,7 @@ export default function MatchesScreen() {
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
+          ItemSeparatorComponent={() => <View style={{ height: 1, backgroundColor: colors.separator }} />}
         />
       )}
     </SafeAreaView>
@@ -264,7 +261,6 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 28,
     fontWeight: '700',
-    fontFamily: Platform.OS === 'ios' ? 'System' : 'Roboto',
   },
   headerSubtitle: {
     fontSize: 14,
@@ -288,16 +284,8 @@ const styles = StyleSheet.create({
   matchItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
     paddingVertical: 12,
-    marginHorizontal: 16,
-    marginVertical: 4,
-    borderRadius: 16,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 3,
   },
   avatar: {
     width: 64,
@@ -358,18 +346,25 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 32,
   },
+  emptyIconWrapper: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
+  },
   emptyTitle: {
     fontSize: 20,
     fontWeight: '600',
-    marginTop: 16,
+    marginBottom: 8,
   },
   emptySubtitle: {
     fontSize: 15,
-    marginTop: 8,
     textAlign: 'center',
+    marginBottom: 24,
   },
   discoverButton: {
-    marginTop: 24,
     paddingHorizontal: 32,
     paddingVertical: 14,
     borderRadius: 28,

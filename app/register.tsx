@@ -1,9 +1,9 @@
-// app/register.tsx
+// app/register.tsx - 注册页面
+// 遵循 UX 设计报告 - 咖啡/奶油暖色调系
 import React, { useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
-  Dimensions,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -20,9 +20,6 @@ import { Text as ThemedText, View as ThemedView } from '@/components/Themed';
 import { useColorScheme } from '@/components/useColorScheme';
 import Colors from '@/constants/Colors';
 import { useAuth } from '@/contexts/AuthContext';
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const INPUT_WIDTH = Math.min(SCREEN_WIDTH - 64, 350);
 
 export default function RegisterScreen() {
   const colorScheme = useColorScheme();
@@ -91,7 +88,6 @@ export default function RegisterScreen() {
       });
 
       if (result.code === 0) {
-        // 注册成功，跳转到登录页
         Alert.alert(
           '注册成功',
           '请使用您的账号登录',
@@ -129,7 +125,7 @@ export default function RegisterScreen() {
           {/* 头部 Logo 区域 */}
           <View style={styles.header}>
             <View style={[styles.logoContainer, { backgroundColor: colors.primary }]}>
-              <Ionicons name="person-add-outline" size={40} color="#fff" />
+              <Ionicons name="person-add-outline" size={32} color="#fff" />
             </View>
             <ThemedText style={[styles.title, { color: colors.text }]}>创建账号</ThemedText>
             <ThemedText style={[styles.subtitle, { color: colors.textSecondary }]}>
@@ -141,9 +137,9 @@ export default function RegisterScreen() {
           <View style={styles.form}>
             {/* 错误消息 */}
             {errorMessage && (
-              <View style={[styles.errorContainer, { backgroundColor: `${colors.passButton}40` }]}>
-                <Ionicons name="alert-circle" size={20} color={colors.textSecondary} />
-                <ThemedText style={[styles.errorText, { color: colors.textSecondary }]}>
+              <View style={[styles.errorContainer, { backgroundColor: '#EF444420', borderColor: '#EF4444' }]}>
+                <Ionicons name="alert-circle" size={20} color="#EF4444" />
+                <ThemedText style={[styles.errorText, { color: '#EF4444' }]}>
                   {errorMessage}
                 </ThemedText>
               </View>
@@ -151,16 +147,17 @@ export default function RegisterScreen() {
 
             {/* 邮箱输入框 */}
             <View style={styles.inputContainer}>
+              <ThemedText style={[styles.inputLabel, { color: colors.text }]}>邮箱地址</ThemedText>
               <View style={[styles.inputWrapper, { backgroundColor: colors.cardBackground, borderColor: colors.border }]}>
                 <Ionicons
                   name="mail-outline"
-                  size={22}
+                  size={20}
                   color={colors.textMuted}
                   style={styles.inputIcon}
                 />
                 <TextInput
                   style={[styles.input, { color: colors.text }]}
-                  placeholder="请输入 .edu 邮箱"
+                  placeholder="name@university.edu"
                   placeholderTextColor={colors.textMuted}
                   value={eduEmail}
                   onChangeText={setEduEmail}
@@ -178,16 +175,17 @@ export default function RegisterScreen() {
 
             {/* 密码输入框 */}
             <View style={styles.inputContainer}>
+              <ThemedText style={[styles.inputLabel, { color: colors.text }]}>密码</ThemedText>
               <View style={[styles.inputWrapper, { backgroundColor: colors.cardBackground, borderColor: colors.border }]}>
                 <Ionicons
                   name="lock-closed-outline"
-                  size={22}
+                  size={20}
                   color={colors.textMuted}
                   style={styles.inputIcon}
                 />
                 <TextInput
                   style={[styles.input, { color: colors.text }]}
-                  placeholder="设置密码（至少 8 位）"
+                  placeholder="至少 8 位密码"
                   placeholderTextColor={colors.textMuted}
                   value={password}
                   onChangeText={setPassword}
@@ -202,7 +200,7 @@ export default function RegisterScreen() {
                 >
                   <Ionicons
                     name={showPassword ? 'eye-off-outline' : 'eye-outline'}
-                    size={22}
+                    size={20}
                     color={colors.textMuted}
                   />
                 </Pressable>
@@ -211,16 +209,17 @@ export default function RegisterScreen() {
 
             {/* 确认密码输入框 */}
             <View style={styles.inputContainer}>
+              <ThemedText style={[styles.inputLabel, { color: colors.text }]}>确认密码</ThemedText>
               <View style={[styles.inputWrapper, { backgroundColor: colors.cardBackground, borderColor: colors.border }]}>
                 <Ionicons
                   name="lock-closed-outline"
-                  size={22}
+                  size={20}
                   color={colors.textMuted}
                   style={styles.inputIcon}
                 />
                 <TextInput
                   style={[styles.input, { color: colors.text }]}
-                  placeholder="确认密码"
+                  placeholder="再次输入密码"
                   placeholderTextColor={colors.textMuted}
                   value={confirmPassword}
                   onChangeText={setConfirmPassword}
@@ -236,7 +235,7 @@ export default function RegisterScreen() {
                 >
                   <Ionicons
                     name={showConfirmPassword ? 'eye-off-outline' : 'eye-outline'}
-                    size={22}
+                    size={20}
                     color={colors.textMuted}
                   />
                 </Pressable>
@@ -292,7 +291,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     justifyContent: 'center',
-    paddingHorizontal: 32,
+    paddingHorizontal: 24,
     paddingVertical: 40,
   },
   header: {
@@ -300,17 +299,17 @@ const styles = StyleSheet.create({
     marginBottom: 40,
   },
   logoContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 72,
+    height: 72,
+    borderRadius: 36,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 20,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
+    shadowColor: '#6B4226',
+    shadowOpacity: 0.3,
     shadowRadius: 20,
     shadowOffset: { width: 0, height: 4 },
-    elevation: 4,
+    elevation: 8,
   },
   title: {
     fontSize: 28,
@@ -318,8 +317,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   subtitle: {
-    fontSize: 16,
-    fontWeight: '400',
+    fontSize: 15,
     textAlign: 'center',
   },
   form: {
@@ -329,22 +327,30 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderRadius: 12,
-    padding: 12,
+    padding: 14,
     marginBottom: 20,
-    gap: 8,
+    gap: 10,
+    borderWidth: 1,
   },
   errorText: {
     flex: 1,
     fontSize: 14,
+    fontWeight: '500',
   },
   inputContainer: {
-    marginBottom: 16,
+    marginBottom: 20,
+  },
+  inputLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 8,
+    marginLeft: 4,
   },
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderRadius: 16,
+    borderRadius: 14,
     paddingHorizontal: 16,
     paddingVertical: 14,
   },
@@ -361,25 +367,25 @@ const styles = StyleSheet.create({
   },
   hintText: {
     fontSize: 12,
-    marginTop: 6,
+    marginTop: 8,
     marginLeft: 4,
   },
   registerButton: {
-    height: 56,
-    borderRadius: 28,
+    height: 54,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 24,
+    marginTop: 32,
     marginBottom: 24,
-    shadowColor: '#000',
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
+    shadowColor: '#6B4226',
+    shadowOpacity: 0.3,
+    shadowRadius: 15,
     shadowOffset: { width: 0, height: 4 },
-    elevation: 4,
+    elevation: 6,
   },
   registerButtonText: {
     color: '#fff',
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: '600',
   },
   loginContainer: {
