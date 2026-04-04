@@ -1,3 +1,9 @@
+# Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
+
+# ==========================================
+# 后端 - Spring Boot / Java
+# ==========================================
+
 # Compiled class file
 *.class
 
@@ -53,29 +59,12 @@ gradle-app.setting
 .springBeans
 .sts4-cache
 
-# IDE - VS Code
-.vscode/
-*.swp
-*.swo
-*~
-
 # IDE - NetBeans
 /nbproject/private/
 /nbbuild/
 /dist/
 /nbdist/
 /.nb-gradle/
-
-# macOS
-.DS_Store
-.AppleDouble
-.LSOverride
-
-# Windows
-Thumbs.db
-ehthumbs.db
-Desktop.ini
-$RECYCLE.BIN/
 
 # Application-specific
 application.properties
@@ -94,3 +83,65 @@ keystore.jks
 .env
 .env.local
 .env.*.local
+
+# ==========================================
+# 前端 - React Native / Expo
+# ==========================================
+
+# dependencies
+node_modules/
+
+# Expo
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+
+# Native
+.kotlin/
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+
+# Metro
+.metro-health-check*
+
+# debug
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# macOS
+.DS_Store
+*.pem
+
+# local env files
+.env*.local
+
+# typescript
+*.tsbuildinfo
+
+# generated native folders
+/ios
+/android
+
+# ==========================================
+# IDE - VS Code (共用)
+# ==========================================
+!.vscode/
+*.swp
+*.swo
+*~
+
+# macOS (共用)
+.AppleDouble
+.LSOverride
+
+# Windows (共用)
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/

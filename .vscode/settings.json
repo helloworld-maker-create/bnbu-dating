@@ -8,7 +8,12 @@
     "additionalDirectories": [
       "C:\\Users\\23328\\Desktop\\machine learning"
     ]
-},
-"java.compile.nullAnalysis.mode": "automatic",
-"java.configuration.updateBuildConfiguration": "interactive"
+  },
+  "java.compile.nullAnalysis.mode": "automatic",
+  "java.configuration.updateBuildConfiguration": "interactive",
+  "editor.codeActionsOnSave": {
+    "source.fixAll": "explicit",
+    "source.organizeImports": "explicit",
+    "source.sortMembers": "explicit"
+  }
 }
