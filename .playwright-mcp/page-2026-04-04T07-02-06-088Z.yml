@@ -1,0 +1,33 @@
+- generic [ref=e170]:
+  - generic [ref=e440]:
+    - generic [ref=e445]:
+      - generic [ref=e446]: TA
+      - generic [ref=e447]: 计算机科学与技术 · 2022 级
+    - generic [ref=e448]:
+      - generic [ref=e450]: 音乐
+      - generic [ref=e452]: 电影
+      - generic [ref=e454]: 旅行
+    - generic [ref=e456]: 喜欢探索新事物，期待遇见有趣的你～
+    - generic [ref=e457]:
+      - generic [ref=e458] [cursor=pointer]:
+        - generic [ref=e459]: 
+        - generic [ref=e460]: 下一个
+      - generic [ref=e461] [cursor=pointer]:
+        - generic [ref=e462]: 
+        - generic [ref=e463]: 开始视频
+  - tablist [ref=e296]:
+    - tab "💕 💕 匹配" [selected] [ref=e298] [cursor=pointer]:
+      - generic [ref=e299]:
+        - generic [ref=e302]: 💕
+        - generic [ref=e305]: 💕
+      - generic [ref=e306]: 匹配
+    - tab "💬 💬 消息" [ref=e308] [cursor=pointer]:
+      - generic [ref=e309]:
+        - generic [ref=e312]: 💬
+        - generic [ref=e315]: 💬
+      - generic [ref=e316]: 消息
+    - tab "👤 👤 个人中心" [ref=e318] [cursor=pointer]:
+      - generic [ref=e319]:
+        - generic [ref=e322]: 👤
+        - generic [ref=e325]: 👤
+      - generic [ref=e326]: 个人中心

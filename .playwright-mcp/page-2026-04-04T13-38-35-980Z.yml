@@ -1,0 +1,31 @@
+- generic [ref=e270]:
+  - generic:
+    - generic:
+      - generic:
+        - link "(tabs), back" [ref=e272] [cursor=pointer]:
+          - /url: /
+        - heading "登录" [level=1] [ref=e275]
+  - generic [ref=e281]:
+    - generic [ref=e282]:
+      - generic [ref=e284]: 
+      - generic [ref=e285]: DATE IN BNBU
+      - generic [ref=e286]: 校园社交，从相遇开始
+    - generic [ref=e287]:
+      - generic [ref=e306]:
+        - generic [ref=e307]: 
+        - generic [ref=e308]: 请输入邮箱地址
+      - generic [ref=e288]:
+        - generic [ref=e289]: 邮箱地址
+        - generic [ref=e290]:
+          - generic [ref=e291]: 
+          - textbox "name@university.edu" [ref=e292]
+      - generic [ref=e293]:
+        - generic [ref=e294]: 密码
+        - generic [ref=e295]:
+          - generic [ref=e296]: 
+          - textbox "请输入密码" [ref=e297]
+          - generic [ref=e299] [cursor=pointer]: 
+      - generic [ref=e301] [cursor=pointer]: 登录
+      - generic [ref=e302]:
+        - generic [ref=e303]: 还没有账号？
+        - generic [ref=e305] [cursor=pointer]: 立即注册

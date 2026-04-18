@@ -13,6 +13,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { Picker } from '@react-native-picker/picker';
 import { useRouter } from 'expo-router';
+import * as ImagePicker from 'expo-image-picker';
 
 import { Text } from '@/components/Themed';
 import Colors from '@/constants/Colors';
@@ -101,13 +102,53 @@ export default function EditProfileScreen() {
     ]);
   };
 
-  // 选择头像（模拟）
-  const handleSelectAvatar = () => {
-    Alert.alert('选择头像', '请选择头像来源', [
-      { text: '拍照', onPress: () => Alert.alert('提示', '拍照功能开发中') },
-      { text: '从相册选择', onPress: () => Alert.alert('提示', '相册功能开发中') },
-      { text: '取消', style: 'cancel' }
-    ]);
+  // 选择头像
+  const handleSelectAvatar = async () => {
+    if (Platform.OS !== 'web') {
+      Alert.alert('选择头像', '请选择头像来源', [
+        { text: '拍照', onPress: handleTakePhoto },
+        { text: '从相册选择', onPress: handlePickImage },
+        { text: '取消', style: 'cancel' },
+      ]);
+    } else {
+      handlePickImage();
+    }
+  };
+
+  // 拍照
+  const handleTakePhoto = async () => {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('权限不足', '需要相机权限才能拍照');
+      return;
+    }
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    });
+    if (!result.canceled && result.assets[0]) {
+      setAvatar(result.assets[0].uri);
+    }
+  };
+
+  // 从相册选择
+  const handlePickImage = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('权限不足', '需要相册权限才能选择照片');
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    });
+    if (!result.canceled && result.assets[0]) {
+      setAvatar(result.assets[0].uri);
+    }
   };
 
   return (
@@ -133,7 +174,7 @@ export default function EditProfileScreen() {
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         {/* 头像区域 */}
-        <View style={[styles.avatarSection, { backgroundColor: colors.cardBackground }]}>
+        <View style={[styles.avatarSection, { backgroundColor: colors.card }]}>
           <Pressable onPress={handleSelectAvatar} style={styles.avatarContainer}>
             <Image source={{ uri: avatar }} style={styles.avatar} />
             <View style={[styles.avatarOverlay, { backgroundColor: colors.shadow }]}>
@@ -144,7 +185,7 @@ export default function EditProfileScreen() {
         </View>
 
         {/* 基本信息 */}
-        <View style={[styles.section, { backgroundColor: colors.cardBackground }]}>
+        <View style={[styles.section, { backgroundColor: colors.card }]}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>基本信息</Text>
 
           {/* 昵称 */}
@@ -190,7 +231,7 @@ export default function EditProfileScreen() {
         </View>
 
         {/* 兴趣爱好 */}
-        <View style={[styles.section, { backgroundColor: colors.cardBackground }]}>
+        <View style={[styles.section, { backgroundColor: colors.card }]}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>兴趣爱好</Text>
           <Text style={[styles.sectionHint, { color: colors.textMuted }]}>选择你的兴趣爱好（可多选）</Text>
           <View style={styles.tagsContainer}>
@@ -221,7 +262,7 @@ export default function EditProfileScreen() {
         </View>
 
         {/* 职业方向 */}
-        <View style={[styles.section, { backgroundColor: colors.cardBackground }]}>
+        <View style={[styles.section, { backgroundColor: colors.card }]}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>职业方向/目标</Text>
           <Text style={[styles.sectionHint, { color: colors.textMuted }]}>选择你的目标（可多选）</Text>
           <View style={styles.tagsContainer}>
@@ -252,7 +293,7 @@ export default function EditProfileScreen() {
         </View>
 
         {/* 个人简介 */}
-        <View style={[styles.section, { backgroundColor: colors.cardBackground }]}>
+        <View style={[styles.section, { backgroundColor: colors.card }]}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>个人简介</Text>
           <TextInput
             style={[styles.bioInput, { color: colors.text, borderColor: colors.separator }]}

@@ -1,487 +1,225 @@
-// app/(tabs)/messages.tsx - 消息中心页面
-// 遵循 UX 设计报告 4.5 节规范
-import React, { useEffect, useState } from 'react';
+// app/(tabs)/messages.tsx - Messages 消息页
+// Campus Connect 设计风格: Header + New Matches 气泡 + Conversation List
+
+import React from 'react';
 import {
   FlatList,
   Image,
-  Platform,
   Pressable,
   SafeAreaView,
   StyleSheet,
   Text,
   View,
-  ActivityIndicator,
   ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-
 import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
-import { useAuth } from '@/contexts/AuthContext';
-import {
-  Conversation,
-  getAllConversations,
-  markMessagesAsRead,
-  formatTimestamp,
-} from '@/utils/MessageStorage';
+import { spacing, borderRadius, typography, shadows } from '@/constants/theme';
+import { Avatar, Badge } from '@/components/CampusComponents';
 
-// ============================================
-// 新匹配横向滚动项组件
-// ============================================
-interface NewMatchItemProps {
-  user: {
-    id: string;
-    name: string;
-    avatar: string;
-  };
-  colors: typeof Colors.light;
-  onPress: (id: string) => void;
-}
+// 模拟新匹配数据
+const NEW_MATCHES = [
+  { id: '1', name: '小明', avatar: 'https://i.pravatar.cc/80?u=match1' },
+  { id: '2', name: '小红', avatar: 'https://i.pravatar.cc/80?u=match2' },
+  { id: '3', name: '小刚', avatar: 'https://i.pravatar.cc/80?u=match3' },
+  { id: '4', name: '小美', avatar: 'https://i.pravatar.cc/80?u=match4' },
+];
 
-const NewMatchItem: React.FC<NewMatchItemProps> = ({ user, colors, onPress }) => {
-  return (
-    <Pressable onPress={() => onPress(user.id)} style={styles.newMatchItem}>
-      <View style={[styles.newMatchAvatarWrapper, { borderColor: colors.primary }]}>
-        <Image
-          source={{ uri: user.avatar }}
-          style={styles.newMatchAvatar}
-          resizeMode="cover"
-        />
-      </View>
-      <Text style={[styles.newMatchName, { color: colors.text }]} numberOfLines={1}>
-        {user.name}
-      </Text>
-    </Pressable>
-  );
-};
+// 模拟对话数据
+const CONVERSATIONS = [
+  {
+    id: '1',
+    name: '艾玛',
+    avatar: 'https://i.pravatar.cc/80?u=convo1',
+    lastMessage: '嗨！你这学期过得怎么样？',
+    time: '2小时前',
+    unread: 2,
+  },
+  {
+    id: '2',
+    name: '大卫',
+    avatar: 'https://i.pravatar.cc/80?u=convo2',
+    lastMessage: '你：听起来不错！我们见面吧',
+    time: '1天前',
+    unread: 0,
+  },
+  {
+    id: '3',
+    name: '苏菲',
+    avatar: 'https://i.pravatar.cc/80?u=convo3',
+    lastMessage: '打个招呼吧！👋',
+    time: '刚刚',
+    unread: 0,
+  },
+];
 
-// ============================================
-// 消息列表项组件
-// ============================================
-interface MessageItemProps {
-  conversation: Conversation;
-  onPress: (id: string) => void;
-  colors: typeof Colors.light;
-}
-
-const MessageItem: React.FC<MessageItemProps> = ({ conversation, onPress, colors }) => {
-  return (
-    <Pressable
-      onPress={() => onPress(conversation.id)}
-      style={({ pressed }) => [
-        styles.messageItem,
-        { backgroundColor: colors.cardBackground, borderBottomColor: colors.separator },
-        pressed && { backgroundColor: colors.tagBackground },
-      ]}
-    >
-      {/* 头像 */}
-      <View style={styles.avatarWrapper}>
-        <Image
-          source={{ uri: conversation.userAvatar }}
-          style={styles.avatar}
-          resizeMode="cover"
-        />
-      </View>
-
-      {/* 内容区域 */}
-      <View style={styles.messageContent}>
-        {/* 姓名和时间 */}
-        <View style={styles.nameRow}>
-          <Text style={[styles.userName, { color: colors.text }]} numberOfLines={1}>
-            {conversation.userName}
-          </Text>
-          <Text style={[styles.timestamp, { color: colors.textMuted }]}>
-            {formatTimestamp(conversation.lastMessageTime)}
-          </Text>
-        </View>
-
-        {/* 专业 */}
-        {conversation.userMajor && (
-          <Text style={[styles.major, { color: colors.textSecondary }]} numberOfLines={1}>
-            {conversation.userMajor}
-          </Text>
-        )}
-
-        {/* 最后一条消息 */}
-        <View style={styles.lastMessageRow}>
-          <Text
-            style={[
-              styles.lastMessage,
-              { color: conversation.unreadCount > 0 ? colors.text : colors.textMuted },
-            ]}
-            numberOfLines={1}
-          >
-            {conversation.lastMessage || '开始聊天吧～'}
-          </Text>
-          {conversation.unreadCount > 0 && (
-            <View style={[styles.unreadBadge, { backgroundColor: colors.primary }]}>
-              <Text style={styles.unreadCount}>
-                {conversation.unreadCount > 99 ? '99+' : conversation.unreadCount}
-              </Text>
-            </View>
-          )}
-        </View>
-      </View>
-
-      {/* 右箭头 */}
-      <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
-    </Pressable>
-  );
-};
-
-// ============================================
-// 主页面组件
-// ============================================
 export default function MessagesScreen() {
   const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? 'light'];
-  const { userId } = useAuth();
+  const colors = Colors[colorScheme];
 
-  const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  // 模拟新匹配用户
-  const newMatches = [
-    { id: '1', name: '小明', avatar: 'https://picsum.photos/400/400?random=1' },
-    { id: '2', name: '小红', avatar: 'https://picsum.photos/400/400?random=2' },
-    { id: '3', name: '小刚', avatar: 'https://picsum.photos/400/400?random=3' },
-    { id: '4', name: '小美', avatar: 'https://picsum.photos/400/400?random=4' },
-    { id: '5', name: '小强', avatar: 'https://picsum.photos/400/400?random=5' },
-  ];
-
-  useEffect(() => {
-    loadConversations();
-  }, []);
-
-  async function loadConversations() {
-    setLoading(true);
-    const convos = await getAllConversations();
-    setConversations(convos);
-    setLoading(false);
-  }
-
-  // 处理点击消息项
-  const handlePressMessage = async (conversationId: string) => {
-    // 标记为已读
-    await markMessagesAsRead(conversationId);
-    // 刷新列表
-    await loadConversations();
-    // 跳转到聊天页面
-    router.push({
-      pathname: '/chat/[id]',
-      params: { id: conversationId },
-    } as never);
-  };
-
-  // 处理点击新匹配
-  const handlePressNewMatch = (userId: string) => {
-    // 可以直接跳转到聊天或者用户资料
-    console.log('Pressed new match:', userId);
-  };
-
-  // 渲染新匹配项
-  const renderNewMatchItem = ({ item }: { item: typeof newMatches[0] }) => (
-    <NewMatchItem
-      user={item}
-      onPress={handlePressNewMatch}
-      colors={colors}
-    />
-  );
-
-  // 渲染消息列表项
-  const renderMessageItem = ({ item }: { item: Conversation }) => (
-    <MessageItem
-      conversation={item}
-      onPress={handlePressMessage}
-      colors={colors}
-    />
-  );
-
-  // 空状态
-  const renderEmptyState = () => (
-    <View style={[styles.emptyState, { backgroundColor: colors.background }]}>
-      <View style={[styles.emptyIconWrapper, { backgroundColor: colors.tagBackground }]}>
-        <Ionicons name="chatbubbles-outline" size={40} color={colors.primary} />
+  const renderMatchItem = (item: typeof NEW_MATCHES[0]) => (
+    <Pressable
+      key={item.id}
+      style={styles.matchBubble}
+      onPress={() => router.push({ pathname: '/chat/[id]', params: { id: item.id } } as any)}
+    >
+      <View style={[styles.matchRing, { borderColor: colors.primary }]}>
+        <Image source={{ uri: item.avatar }} style={styles.matchAvatar} />
       </View>
-      <Text style={[styles.emptyTitle, { color: colors.text }]}>还没有消息</Text>
-      <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
-        去匹配页面发现更多有趣的人吧
+      <Text style={[styles.matchName, { color: colors.textSecondary }]} numberOfLines={1}>
+        {item.name}
       </Text>
-      <Pressable
-        onPress={() => router.push('/(tabs)/index' as never)}
-        style={[styles.discoverButton, { backgroundColor: colors.primary }]}
-      >
-        <Text style={styles.discoverButtonText}>去匹配</Text>
-      </Pressable>
-    </View>
+    </Pressable>
+  );
+
+  const renderConvoItem = ({ item }: { item: typeof CONVERSATIONS[0] }) => (
+    <Pressable
+      onPress={() => router.push({ pathname: '/chat/[id]', params: { id: item.id } } as any)}
+      style={[styles.convoItem, { borderBottomColor: colors.border }]}
+    >
+      <Avatar uri={item.avatar} size={52} />
+      <View style={styles.convoInfo}>
+        <Text style={[styles.convoName, { color: colors.text }]}>{item.name}</Text>
+        <Text
+          style={[styles.convoPreview, { color: colors.textSecondary }]}
+          numberOfLines={1}
+        >
+          {item.lastMessage}
+        </Text>
+      </View>
+      <View style={styles.convoMeta}>
+        <Text style={[styles.convoTime, { color: colors.textSecondary }]}>{item.time}</Text>
+        {item.unread > 0 && <Badge count={item.unread} />}
+      </View>
+    </Pressable>
   );
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
-      {/* 头部 - 大标题风格 */}
-      <View style={[styles.header, { borderBottomColor: colors.separator }]}>
-        <View style={styles.headerContent}>
-          <Text style={[styles.headerTitle, { color: colors.text }]}>Messages</Text>
-          <Text style={[styles.headerSubtitle, { color: colors.textMuted }]}>
-            {conversations.length} 个会话
-          </Text>
-        </View>
-        <Pressable style={styles.composeButton}>
-          <Ionicons name="create-outline" size={24} color={colors.text} />
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      {/* Header */}
+      <View style={styles.header}>
+        <Text style={[styles.headerTitle, { color: colors.text, fontFamily: typography.serif }]}>
+          消息
+        </Text>
+        <Pressable style={[styles.iconBtn, { backgroundColor: colors.cream }]}>
+          <Ionicons name="create-outline" size={18} color={colors.primary} />
         </Pressable>
       </View>
 
-      {/* 消息列表 */}
-      {loading ? (
-        <View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
-          <ActivityIndicator size="large" color={colors.primary} />
-        </View>
-      ) : conversations.length === 0 ? (
-        renderEmptyState()
-      ) : (
-        <FlatList
-          data={conversations}
-          renderItem={renderMessageItem}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={[styles.listContent, { backgroundColor: colors.cardBackground }]}
-          showsVerticalScrollIndicator={false}
-          ListHeaderComponent={
-            newMatches.length > 0 ? (
-              <>
-                {/* 新匹配横向滚动区 */}
-                <View style={styles.newMatchesSection}>
-                  <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
-                    New Matches
-                  </Text>
-                  <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={styles.newMatchesContainer}
-                  >
-                    {newMatches.map((match) => (
-                      <NewMatchItem
-                        key={match.id}
-                        user={match}
-                        onPress={handlePressNewMatch}
-                        colors={colors}
-                      />
-                    ))}
-                  </ScrollView>
-                </View>
+      {/* New Matches Section */}
+      <View style={styles.matchesSection}>
+        <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
+          新匹配
+        </Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.matchesRow}>
+          {NEW_MATCHES.map((match) => renderMatchItem(match))}
+        </ScrollView>
+      </View>
 
-                {/* 分隔线 */}
-                <View style={[styles.sectionDivider, { backgroundColor: colors.separator }]} />
-
-                {/* 会话列表标题 */}
-                <View style={styles.messagesHeader}>
-                  <Text style={[styles.messagesTitle, { color: colors.textSecondary }]}>
-                    Messages
-                  </Text>
-                </View>
-              </>
-            ) : null
-          }
-          ItemSeparatorComponent={() => <View style={{ height: 0 }} />}
-        />
-      )}
+      {/* Conversations List */}
+      <FlatList
+        data={CONVERSATIONS}
+        renderItem={renderConvoItem}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={styles.convoList}
+        showsVerticalScrollIndicator={false}
+      />
     </SafeAreaView>
   );
 }
 
-// ============================================
-// 样式
-// ============================================
 const styles = StyleSheet.create({
-  safeArea: {
+  container: {
     flex: 1,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingTop: Platform.OS === 'ios' ? 50 : 30,
-    paddingBottom: 16,
-    borderBottomWidth: 1,
-  },
-  headerContent: {
-    flexDirection: 'column',
+    paddingHorizontal: spacing.lg,
+    paddingVertical: 12,
   },
   headerTitle: {
-    fontSize: 34,
-    fontWeight: '700',
+    fontSize: 24,
+    fontWeight: typography.weights.bold,
   },
-  headerSubtitle: {
-    fontSize: 14,
-    marginTop: 4,
-  },
-  composeButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+  iconBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  loadingContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  listContent: {
-    paddingTop: 8,
-    paddingBottom: 100,
-  },
-
-  // 新匹配横向滚动区
-  newMatchesSection: {
-    paddingVertical: 16,
-    paddingHorizontal: 16,
-  },
-  sectionTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    textTransform: 'uppercase',
-    marginBottom: 12,
-  },
-  newMatchesContainer: {
-    gap: 12,
-    paddingRight: 16,
-  },
-  newMatchItem: {
-    width: 72,
-    alignItems: 'center',
-    gap: 8,
-  },
-  newMatchAvatarWrapper: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    borderWidth: 2.5,
-    overflow: 'hidden',
-    backgroundColor: '#E5E5E5',
-  },
-  newMatchAvatar: {
-    width: '100%',
-    height: '100%',
-  },
-  newMatchName: {
-    fontSize: 12,
-    fontWeight: '500',
-    textAlign: 'center',
-  },
-  sectionDivider: {
-    height: 1,
-    marginVertical: 8,
-  },
-  messagesHeader: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  messagesTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    textTransform: 'uppercase',
-  },
-
-  // 消息列表项
-  messageItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-  },
-  avatarWrapper: {
-    position: 'relative',
-    marginRight: 14,
-  },
-  avatar: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: '#E5E5E5',
-  },
-  messageContent: {
-    flex: 1,
-    paddingRight: 8,
-  },
-  nameRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 4,
-  },
-  userName: {
-    fontSize: 16,
-    fontWeight: '600',
-    flex: 1,
-  },
-  timestamp: {
-    fontSize: 12,
-  },
-  major: {
-    fontSize: 13,
-    marginTop: 2,
-    marginBottom: 4,
-  },
-  lastMessageRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  lastMessage: {
-    fontSize: 14,
-    flex: 1,
-    marginRight: 8,
-  },
-  unreadBadge: {
-    minWidth: 20,
-    height: 20,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 6,
-  },
-  unreadCount: {
-    color: '#fff',
-    fontSize: 11,
-    fontWeight: '700',
-  },
-
-  // 空状态
-  emptyState: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 32,
-  },
-  emptyIconWrapper: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 20,
-  },
-  emptyTitle: {
-    fontSize: 20,
-    fontWeight: '600',
+  matchesSection: {
     marginBottom: 8,
   },
-  emptySubtitle: {
-    fontSize: 15,
+  sectionTitle: {
+    fontSize: 11,
+    fontWeight: typography.weights.semibold,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    paddingHorizontal: spacing.lg,
+    marginBottom: 8,
+  },
+  matchesRow: {
+    paddingHorizontal: spacing.lg,
+    gap: 16,
+  },
+  matchBubble: {
+    width: 60,
+    alignItems: 'center',
+    gap: 5,
+  },
+  matchRing: {
+    width: 58,
+    height: 58,
+    borderRadius: 29,
+    borderWidth: 2.5,
+    padding: 2,
+    overflow: 'hidden',
+  },
+  matchAvatar: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 99,
+  },
+  matchName: {
+    fontSize: 10,
     textAlign: 'center',
-    marginBottom: 24,
+    overflow: 'hidden',
   },
-  discoverButton: {
-    paddingHorizontal: 48,
+  convoList: {
+    flex: 1,
+  },
+  convoItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingHorizontal: spacing.lg,
     paddingVertical: 14,
-    borderRadius: 28,
+    borderBottomWidth: 1,
   },
-  discoverButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
+  convoInfo: {
+    flex: 1,
+    minWidth: 0,
+  },
+  convoName: {
+    fontSize: 13,
+    fontWeight: typography.weights.semibold,
+    marginBottom: 2,
+  },
+  convoPreview: {
+    fontSize: 11,
+    overflow: 'hidden',
+  },
+  convoMeta: {
+    flexDirection: 'column',
+    alignItems: 'flex-end',
+    gap: 4,
+  },
+  convoTime: {
+    fontSize: 11,
   },
 });

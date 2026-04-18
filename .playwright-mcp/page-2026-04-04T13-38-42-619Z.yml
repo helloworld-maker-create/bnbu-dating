@@ -1,0 +1,35 @@
+- generic [ref=e309]:
+  - generic:
+    - generic:
+      - generic:
+        - link "登录, back" [ref=e311] [cursor=pointer]:
+          - /url: /login
+        - heading "注册" [level=1] [ref=e314]
+  - generic [ref=e320]:
+    - generic [ref=e321]:
+      - generic [ref=e323]: 
+      - generic [ref=e324]: 创建账号
+      - generic [ref=e325]: 使用 .edu 邮箱加入 BNBU 校园社交
+    - generic [ref=e326]:
+      - generic [ref=e327]:
+        - generic [ref=e328]: 邮箱地址
+        - generic [ref=e329]:
+          - generic [ref=e330]: 
+          - textbox "name@university.edu" [ref=e331]
+        - generic [ref=e332]: 仅支持 .edu 结尾的校园邮箱
+      - generic [ref=e333]:
+        - generic [ref=e334]: 密码
+        - generic [ref=e335]:
+          - generic [ref=e336]: 
+          - textbox "至少 8 位密码" [ref=e337]
+          - generic [ref=e339] [cursor=pointer]: 
+      - generic [ref=e340]:
+        - generic [ref=e341]: 确认密码
+        - generic [ref=e342]:
+          - generic [ref=e343]: 
+          - textbox "再次输入密码" [ref=e344]
+          - generic [ref=e346] [cursor=pointer]: 
+      - generic [ref=e348] [cursor=pointer]: 注册
+      - generic [ref=e349]:
+        - generic [ref=e350]: 已有账号？
+        - generic [ref=e352] [cursor=pointer]: 立即登录

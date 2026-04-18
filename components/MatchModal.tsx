@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Colors from '@/constants/Colors';
+import { typography } from '@/constants/theme';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -25,14 +26,14 @@ interface MatchModalProps {
     name: string;
     avatar: string;
   };
-  matchedUser: {
+  matchedUser?: {
     name: string;
     avatar: string;
   };
   colors: typeof Colors.light;
 }
 
-const MatchModal: React.FC<MatchModalProps> = ({
+export const MatchModal: React.FC<MatchModalProps> = ({
   visible,
   onClose,
   onSendMessage,
@@ -40,6 +41,8 @@ const MatchModal: React.FC<MatchModalProps> = ({
   matchedUser,
   colors,
 }) => {
+  if (!matchedUser) return null;
+
   // 动画引用
   const fadeAnim = React.useRef(new Animated.Value(0)).current;
   const scaleAnim = React.useRef(new Animated.Value(0.8)).current;
@@ -89,15 +92,16 @@ const MatchModal: React.FC<MatchModalProps> = ({
             style={[
               styles.modalContent,
               {
-                backgroundColor: colors.cardBackground,
-                borderColor: colors.primary,
+                backgroundColor: 'rgba(26,14,8,0.9)',
+                borderColor: 'rgba(196,168,130,0.3)',
+                borderWidth: 1,
                 transform: [{ scale: scaleAnim }],
               },
             ]}
           >
             {/* 标题 */}
-            <Text style={[styles.title, { color: colors.primary }]}>It's a Match!</Text>
-            <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+            <Text style={[styles.title, { color: '#FFFFFF' }]}>匹配成功！</Text>
+            <Text style={[styles.subtitle, { color: '#C4A882' }]}>
               你和 {matchedUser.name} 互相喜欢了对方
             </Text>
 
@@ -112,9 +116,7 @@ const MatchModal: React.FC<MatchModalProps> = ({
               </View>
 
               {/* 爱心分隔符 */}
-              <View style={[styles.heartSeparator, { backgroundColor: colors.primary }]}>
-                <Ionicons name="heart" size={24} color="#fff" />
-              </View>
+              <Text style={styles.heartSeparator}>❤</Text>
 
               <View style={styles.avatarWrapper}>
                 <Image
@@ -132,17 +134,16 @@ const MatchModal: React.FC<MatchModalProps> = ({
                 onPress={onSendMessage}
                 style={[styles.sendButton, { backgroundColor: colors.primary }]}
               >
-                <Ionicons name="chatbubble" size={20} color="#fff" />
-                <Text style={styles.sendButtonText}>Send a Message</Text>
+                <Text style={styles.sendButtonText}>发送消息</Text>
               </Pressable>
 
               {/* 继续浏览按钮 */}
               <Pressable
                 onPress={onClose}
-                style={[styles.keepBrowsingButton, { borderColor: colors.primary }]}
+                style={[styles.keepBrowsingButton, { borderColor: 'rgba(196,168,130,0.4)' }]}
               >
-                <Text style={[styles.keepBrowsingText, { color: colors.primary }]}>
-                  Keep Browsing
+                <Text style={[styles.keepBrowsingText, { color: '#C4A882' }]}>
+                  继续浏览
                 </Text>
               </Pressable>
             </View>
@@ -166,11 +167,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   modalContent: {
-    width: '100%',
-    maxWidth: 340,
+    width: 342,
     borderRadius: 24,
-    borderWidth: 2,
-    padding: 24,
+    borderWidth: 1,
+    padding: 32,
     alignItems: 'center',
     ...Platform.select({
       ios: {
@@ -188,13 +188,14 @@ const styles = StyleSheet.create({
     }),
   },
   title: {
-    fontSize: 28,
+    fontSize: 30,
     fontWeight: '700',
+    fontFamily: typography.serif,
     marginBottom: 8,
     textAlign: 'center',
   },
   subtitle: {
-    fontSize: 15,
+    fontSize: 13,
     textAlign: 'center',
     marginBottom: 24,
   },
@@ -203,12 +204,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 16,
-    marginBottom: 32,
+    marginBottom: 28,
   },
   avatarWrapper: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 88,
+    height: 88,
+    borderRadius: 44,
     borderWidth: 3,
     borderColor: '#C4A882',
     overflow: 'hidden',
@@ -219,23 +220,18 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   heartSeparator: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
+    fontSize: 22,
+    color: '#C4A882',
   },
   actionsContainer: {
     width: '100%',
-    gap: 12,
+    gap: 10,
   },
   sendButton: {
-    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
-    height: 52,
-    borderRadius: 16,
+    height: 50,
+    borderRadius: 12,
     ...Platform.select({
       ios: {
         shadowColor: '#6B4226',
@@ -253,20 +249,19 @@ const styles = StyleSheet.create({
   },
   sendButtonText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '600',
   },
   keepBrowsingButton: {
-    height: 52,
-    borderRadius: 16,
-    borderWidth: 2,
+    height: 46,
+    borderRadius: 12,
+    borderWidth: 1.5,
     alignItems: 'center',
     justifyContent: 'center',
   },
   keepBrowsingText: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 13,
+    fontWeight: '500',
   },
 });
 
-export default MatchModal;

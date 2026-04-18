@@ -1,0 +1,40 @@
+- generic [ref=e170]:
+  - generic [ref=e464]:
+    - generic [ref=e465]:
+      - generic [ref=e467]:
+        - generic [ref=e469]: 
+        - generic [ref=e470]: 你
+      - generic [ref=e472]:
+        - generic [ref=e476]:
+          - generic [ref=e477]: 
+          - generic [ref=e478]: 聊更多以看清对方
+        - generic [ref=e480]: 已发送 0/10 条消息
+    - generic [ref=e485]:
+      - textbox "写一条消息..." [ref=e486]
+      - generic [ref=e488] [cursor=pointer]: 
+    - generic [ref=e489]:
+      - generic [ref=e491] [cursor=pointer]: 
+      - generic [ref=e493] [cursor=pointer]: 
+      - generic [ref=e495] [cursor=pointer]: 
+      - generic [ref=e497] [cursor=pointer]: 
+    - generic [ref=e498]:
+      - generic [ref=e499]: 静音
+      - generic [ref=e500]: 关视频
+      - generic [ref=e501]: 结束
+      - generic [ref=e502]: 发消息
+  - tablist [ref=e296]:
+    - tab "💕 💕 匹配" [selected] [ref=e298] [cursor=pointer]:
+      - generic [ref=e299]:
+        - generic [ref=e302]: 💕
+        - generic [ref=e305]: 💕
+      - generic [ref=e306]: 匹配
+    - tab "💬 💬 消息" [ref=e308] [cursor=pointer]:
+      - generic [ref=e309]:
+        - generic [ref=e312]: 💬
+        - generic [ref=e315]: 💬
+      - generic [ref=e316]: 消息
+    - tab "👤 👤 个人中心" [ref=e318] [cursor=pointer]:
+      - generic [ref=e319]:
+        - generic [ref=e322]: 👤
+        - generic [ref=e325]: 👤
+      - generic [ref=e326]: 个人中心

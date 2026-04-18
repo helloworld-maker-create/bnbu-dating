@@ -1,0 +1,20 @@
+- generic [ref=e170]:
+  - generic [ref=e328]:
+    - generic [ref=e336]: 正在匹配...
+    - generic [ref=e337]: 寻找合适的 TA
+  - tablist [ref=e296]:
+    - tab "💕 💕 匹配" [selected] [ref=e298] [cursor=pointer]:
+      - generic [ref=e299]:
+        - generic [ref=e302]: 💕
+        - generic [ref=e305]: 💕
+      - generic [ref=e306]: 匹配
+    - tab "💬 💬 消息" [ref=e308] [cursor=pointer]:
+      - generic [ref=e309]:
+        - generic [ref=e312]: 💬
+        - generic [ref=e315]: 💬
+      - generic [ref=e316]: 消息
+    - tab "👤 👤 个人中心" [ref=e318] [cursor=pointer]:
+      - generic [ref=e319]:
+        - generic [ref=e322]: 👤
+        - generic [ref=e325]: 👤
+      - generic [ref=e326]: 个人中心

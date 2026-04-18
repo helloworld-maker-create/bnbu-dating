@@ -1,0 +1,71 @@
+- generic [ref=e15]:
+  - generic:
+    - generic:
+      - generic:
+        - link "(tabs), back" [ref=e17] [cursor=pointer]:
+          - /url: /
+        - heading "设置" [level=1] [ref=e20]
+  - generic [ref=e23]:
+    - generic [ref=e24]:
+      - generic [ref=e26] [cursor=pointer]: 
+      - generic [ref=e27]: 设置
+    - generic [ref=e30]:
+      - generic [ref=e31]:
+        - generic [ref=e32]: 通知设置
+        - generic [ref=e33]:
+          - generic [ref=e34]:
+            - generic [ref=e36]: 
+            - generic [ref=e37]: 新的匹配
+          - switch [checked] [ref=e41] [cursor=pointer]
+        - generic [ref=e42]:
+          - generic [ref=e43]:
+            - generic [ref=e45]: 
+            - generic [ref=e46]: 新消息
+          - switch [checked] [ref=e50] [cursor=pointer]
+        - generic [ref=e51]:
+          - generic [ref=e52]:
+            - generic [ref=e54]: 
+            - generic [ref=e55]: 超级喜欢
+          - switch [checked] [ref=e59] [cursor=pointer]
+        - generic [ref=e60]:
+          - generic [ref=e61]:
+            - generic [ref=e63]: 
+            - generic [ref=e64]: 系统通知
+          - switch [checked] [ref=e68] [cursor=pointer]
+      - generic [ref=e69]:
+        - generic [ref=e70]: 隐私与安全
+        - generic [ref=e71] [cursor=pointer]:
+          - generic [ref=e72]:
+            - generic [ref=e74]: 
+            - generic [ref=e75]: 可见范围
+          - generic [ref=e76]: 
+        - generic [ref=e77] [cursor=pointer]:
+          - generic [ref=e78]:
+            - generic [ref=e80]: 
+            - generic [ref=e81]: 黑名单
+          - generic [ref=e82]: 
+        - generic [ref=e83] [cursor=pointer]:
+          - generic [ref=e84]:
+            - generic [ref=e86]: 
+            - generic [ref=e87]: 隐私政策
+          - generic [ref=e88]: 
+      - generic [ref=e89]:
+        - generic [ref=e90]: 通用
+        - generic [ref=e91] [cursor=pointer]:
+          - generic [ref=e92]:
+            - generic [ref=e94]: 
+            - generic [ref=e95]: 语言
+          - generic [ref=e96]:
+            - generic [ref=e97]: 简体中文
+            - generic [ref=e98]: 
+        - generic [ref=e99] [cursor=pointer]:
+          - generic [ref=e100]:
+            - generic [ref=e102]: 
+            - generic [ref=e103]: 清除缓存
+          - generic [ref=e104]: 
+        - generic [ref=e105] [cursor=pointer]:
+          - generic [ref=e106]:
+            - generic [ref=e108]: 
+            - generic [ref=e109]: 关于我们
+          - generic [ref=e110]: 
+      - generic [ref=e112]: Dating in BNBU v1.0.0

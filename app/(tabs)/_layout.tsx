@@ -1,20 +1,13 @@
-// app/(tabs)/_layout.tsx - Tab 导航布局（四 Tab 方案）
-// 遵循 UX 设计报告 - 咖啡/奶油暖色调系
+// app/(tabs)/_layout.tsx - Tab 导航布局
+// Campus Connect 设计风格: 4 Tab (Discover, Nearby, Messages, Profile)
 import React from 'react';
-import { Platform, Pressable, View } from 'react-native';
+import { Platform, StyleSheet } from 'react-native';
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-
 import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
 import { useClientOnlyValue } from '@/components/useClientOnlyValue';
-
-// Tab 图标组件
-function TabBarIcon({ name, color, size }: { name: string; color: string; size: number }) {
-  return (
-    <Ionicons name={name as any} size={size} color={color} />
-  );
-}
+import { typography } from '@/constants/theme';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
@@ -31,8 +24,8 @@ export default function TabLayout() {
             borderTopColor: colors.border,
             borderTopWidth: 1,
             height: 60,
-            paddingBottom: 10,
-            paddingTop: 8,
+            paddingBottom: 8,
+            paddingTop: 10,
           } as any,
           default: {
             backgroundColor: colors.tabBar,
@@ -40,66 +33,57 @@ export default function TabLayout() {
             borderTopWidth: 1,
             height: 83,
             paddingBottom: 33,
-            paddingTop: 8,
+            paddingTop: 10,
           },
         }),
-        tabBarLabelStyle: {
-          fontSize: 10,
-          fontWeight: '600',
-          marginTop: 4,
-          color: colors.text,
-        },
+        tabBarLabelStyle: { fontSize: 10, marginTop: 3 },
         headerShown: useClientOnlyValue(false, true),
-        headerStyle: {
-          backgroundColor: colors.background,
-        },
+        headerStyle: { backgroundColor: colors.background },
         headerTintColor: colors.text,
         headerTitleStyle: {
-          fontWeight: '600',
+          fontWeight: typography.weights.semibold,
           fontSize: 17,
+          fontFamily: typography.serif,
         },
       }}>
-      {/* Tab 1: Discover - 滑动匹配 */}
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Discover',
+          title: '发现',
           tabBarIcon: ({ color, focused }) => (
-            <TabBarIcon name={focused ? 'heart' : 'heart-outline'} color={color} size={28} />
+            <Ionicons name={focused ? 'home' : 'home-outline'} size={22} color={color} />
           ),
           headerShown: false,
         }}
       />
-      {/* Tab 2: Messages - 消息列表 */}
+      <Tabs.Screen
+        name="nearby"
+        options={{
+          title: '附近',
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons name={focused ? 'location' : 'location-outline'} size={22} color={color} />
+          ),
+          headerShown: false,
+        }}
+      />
       <Tabs.Screen
         name="messages"
         options={{
-          title: 'Messages',
+          title: '消息',
           tabBarIcon: ({ color, focused }) => (
-            <TabBarIcon name={focused ? 'chatbubble' : 'chatbubble-outline'} color={color} size={28} />
+            <Ionicons name={focused ? 'chatbubble' : 'chatbubble-outline'} size={22} color={color} />
           ),
           headerShown: false,
         }}
       />
-      {/* Tab 3: Matches - 匹配列表 */}
-      <Tabs.Screen
-        name="matches"
-        options={{
-          title: 'Matches',
-          tabBarIcon: ({ color, focused }) => (
-            <TabBarIcon name={focused ? 'star' : 'star-outline'} color={color} size={28} />
-          ),
-          headerShown: false,
-        }}
-      />
-      {/* Tab 4: Profile - 个人中心 */}
       <Tabs.Screen
         name="two"
         options={{
-          title: 'Profile',
+          title: '我的',
           tabBarIcon: ({ color, focused }) => (
-            <TabBarIcon name={focused ? 'person-circle' : 'person-circle-outline'} color={color} size={28} />
+            <Ionicons name={focused ? 'person' : 'person-outline'} size={22} color={color} />
           ),
+          headerShown: false,
         }}
       />
     </Tabs>

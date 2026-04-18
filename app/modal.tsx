@@ -34,7 +34,7 @@ export default function ModalScreen() {
           5. 尊重彼此，真诚交流
         </Text>
 
-        <View style={[styles.versionContainer, { backgroundColor: colors.cardBackground }]}>
+        <View style={[styles.versionContainer, { backgroundColor: colors.card }]}>
           <Text style={[styles.versionLabel, { color: colors.textMuted }]}>当前版本</Text>
           <Text style={[styles.versionText, { color: colors.primary }]}>v1.0.0</Text>
         </View>

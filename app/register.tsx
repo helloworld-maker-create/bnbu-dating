@@ -148,7 +148,7 @@ export default function RegisterScreen() {
             {/* 邮箱输入框 */}
             <View style={styles.inputContainer}>
               <ThemedText style={[styles.inputLabel, { color: colors.text }]}>邮箱地址</ThemedText>
-              <View style={[styles.inputWrapper, { backgroundColor: colors.cardBackground, borderColor: colors.border }]}>
+              <View style={[styles.inputWrapper, { backgroundColor: colors.card, borderColor: colors.border }]}>
                 <Ionicons
                   name="mail-outline"
                   size={20}
@@ -176,7 +176,7 @@ export default function RegisterScreen() {
             {/* 密码输入框 */}
             <View style={styles.inputContainer}>
               <ThemedText style={[styles.inputLabel, { color: colors.text }]}>密码</ThemedText>
-              <View style={[styles.inputWrapper, { backgroundColor: colors.cardBackground, borderColor: colors.border }]}>
+              <View style={[styles.inputWrapper, { backgroundColor: colors.card, borderColor: colors.border }]}>
                 <Ionicons
                   name="lock-closed-outline"
                   size={20}
@@ -210,7 +210,7 @@ export default function RegisterScreen() {
             {/* 确认密码输入框 */}
             <View style={styles.inputContainer}>
               <ThemedText style={[styles.inputLabel, { color: colors.text }]}>确认密码</ThemedText>
-              <View style={[styles.inputWrapper, { backgroundColor: colors.cardBackground, borderColor: colors.border }]}>
+              <View style={[styles.inputWrapper, { backgroundColor: colors.card, borderColor: colors.border }]}>
                 <Ionicons
                   name="lock-closed-outline"
                   size={20}

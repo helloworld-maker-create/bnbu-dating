@@ -1,426 +1,214 @@
+// app/settings.tsx - 设置页
+// Campus Connect 统一设计风格
+
 import React, { useState } from 'react';
 import {
-  StyleSheet,
+  SafeAreaView,
   ScrollView,
+  StyleSheet,
+  Text,
   View,
   Pressable,
   Switch,
   Alert,
-  Platform,
-  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-
-import { Text } from '@/components/Themed';
+import { router } from 'expo-router';
 import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
-import { useAuth } from '@/contexts/AuthContext';
+import { spacing, borderRadius, typography, shadows } from '@/constants/theme';
 
 export default function SettingsScreen() {
   const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? 'light'];
-  const router = useRouter();
-  const { logout, isAuthenticated, eduEmail } = useAuth();
+  const colors = Colors[colorScheme];
+  const [ghostMode, setGhostMode] = useState(false);
+  const [matchNotif, setMatchNotif] = useState(true);
+  const [messageNotif, setMessageNotif] = useState(true);
 
-  // 通知设置
-  const [matchNotification, setMatchNotification] = useState(true);
-  const [messageNotification, setMessageNotification] = useState(true);
-  const [likeNotification, setLikeNotification] = useState(true);
-  const [systemNotification, setSystemNotification] = useState(true);
-
-  const [isClearingCache, setIsClearingCache] = useState(false);
-
-  // 清除缓存
   const handleClearCache = () => {
-    Alert.alert('清除缓存', '确定要清除缓存吗？', [
-      { text: '取消', style: 'cancel' },
-      {
-        text: '确定',
-        onPress: async () => {
-          setIsClearingCache(true);
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          setIsClearingCache(false);
-          Alert.alert('成功', '缓存已清除');
-        }
-      }
-    ]);
+    Alert.alert('清除缓存', '缓存已清除', [{ text: '确定' }]);
   };
 
-  // 退出登录
-  const handleLogout = () => {
+  const handleSignOut = () => {
     Alert.alert('退出登录', '确定要退出登录吗？', [
       { text: '取消', style: 'cancel' },
-      {
-        text: '确定',
-        style: 'destructive',
-        onPress: async () => {
-          await logout();
-        }
-      }
-    ]);
-  };
-
-  // 修改密码
-  const handleChangePassword = () => {
-    Alert.alert('修改密码', '修改密码功能开发中', [
-      { text: '确定' }
-    ]);
-  };
-
-  // 绑定手机
-  const handleBindPhone = () => {
-    Alert.alert('绑定手机', '绑定手机功能开发中', [
-      { text: '确定' }
+      { text: '确定', onPress: () => router.replace('/login') },
     ]);
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
-      {/* 头部导航 - iOS 风格 */}
-      <View style={[styles.header, { borderBottomColor: colors.separator }]}>
-        <Pressable onPress={() => router.back()} style={styles.headerButton}>
-          <Ionicons name="chevron-back" size={28} color={colors.text} />
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      {/* Header */}
+      <View style={styles.header}>
+        <Pressable onPress={() => router.back()} style={styles.backBtn}>
+          <Ionicons name="chevron-back" size={24} color={colors.text} />
         </Pressable>
-        <Text style={[styles.headerTitle, { color: colors.text }]}>设置</Text>
-        <View style={styles.headerButton} />
+        <Text style={[styles.headerTitle, { color: colors.text, fontFamily: typography.serif }]}>
+          设置
+        </Text>
+        <View style={styles.placeholder} />
       </View>
 
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        {/* 通知设置 */}
-        <View style={[styles.section, { backgroundColor: colors.cardBackground }]}>
-          <Text style={[styles.sectionHeader, { color: colors.textSecondary }]}>通知设置</Text>
-
-          <View style={[styles.settingRow, { borderBottomColor: colors.separator }]}>
-            <View style={styles.settingRowContent}>
-              <View style={[styles.iconBox, { backgroundColor: `${colors.primary}15` }]}>
-                <Ionicons name="heart-outline" size={20} color={colors.primary} />
-              </View>
-              <Text style={[styles.settingLabel, { color: colors.text }]}>新的匹配</Text>
-            </View>
-            <Switch
-              value={matchNotification}
-              onValueChange={setMatchNotification}
-              trackColor={{ false: colors.border, true: colors.primary }}
-              thumbColor="#fff"
-            />
-          </View>
-
-          <View style={[styles.settingRow, { borderBottomColor: colors.separator }]}>
-            <View style={styles.settingRowContent}>
-              <View style={[styles.iconBox, { backgroundColor: `${colors.primary}15` }]}>
-                <Ionicons name="chatbubble-outline" size={20} color={colors.primary} />
-              </View>
-              <Text style={[styles.settingLabel, { color: colors.text }]}>新消息</Text>
-            </View>
-            <Switch
-              value={messageNotification}
-              onValueChange={setMessageNotification}
-              trackColor={{ false: colors.border, true: colors.primary }}
-              thumbColor="#fff"
-            />
-          </View>
-
-          <View style={[styles.settingRow, { borderBottomColor: colors.separator }]}>
-            <View style={styles.settingRowContent}>
-              <View style={[styles.iconBox, { backgroundColor: `${colors.primary}15` }]}>
-                <Ionicons name="star-outline" size={20} color={colors.primary} />
-              </View>
-              <Text style={[styles.settingLabel, { color: colors.text }]}>超级喜欢</Text>
-            </View>
-            <Switch
-              value={likeNotification}
-              onValueChange={setLikeNotification}
-              trackColor={{ false: colors.border, true: colors.primary }}
-              thumbColor="#fff"
-            />
-          </View>
-
-          <View style={[styles.settingRow]}>
-            <View style={styles.settingRowContent}>
-              <View style={[styles.iconBox, { backgroundColor: `${colors.primary}15` }]}>
-                <Ionicons name="megaphone-outline" size={20} color={colors.primary} />
-              </View>
-              <Text style={[styles.settingLabel, { color: colors.text }]}>系统通知</Text>
-            </View>
-            <Switch
-              value={systemNotification}
-              onValueChange={setSystemNotification}
-              trackColor={{ false: colors.border, true: colors.primary }}
-              thumbColor="#fff"
-            />
-          </View>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+        {/* 账号设置 */}
+        <View style={[styles.section, { backgroundColor: colors.card }, shadows.sm]}>
+          <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>账号设置</Text>
+          <SettingRow icon="person" label="修改资料" onPress={() => router.push('/profile/edit')} colors={colors} />
+          <View style={[styles.divider, { backgroundColor: colors.border }]} />
+          <SettingRow icon="key" label="修改密码" onPress={() => {}} colors={colors} />
         </View>
 
         {/* 隐私设置 */}
-        <View style={[styles.section, { backgroundColor: colors.cardBackground }]}>
-          <Text style={[styles.sectionHeader, { color: colors.textSecondary }]}>隐私与安全</Text>
-
-          <Pressable
-            style={[styles.pressableRow, { borderBottomColor: colors.separator }]}
-            onPress={() => Alert.alert('提示', '可见范围功能开发中')}
-          >
-            <View style={styles.pressableRowContent}>
-              <View style={[styles.iconBox, { backgroundColor: `${colors.secondary}15` }]}>
-                <Ionicons name="eye-outline" size={20} color={colors.secondary} />
-              </View>
-              <Text style={[styles.settingLabel, { color: colors.text }]}>可见范围</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
-          </Pressable>
-
-          <Pressable
-            style={[styles.pressableRow, { borderBottomColor: colors.separator }]}
-            onPress={() => Alert.alert('提示', '黑名单功能开发中')}
-          >
-            <View style={styles.pressableRowContent}>
-              <View style={[styles.iconBox, { backgroundColor: `${colors.secondary}15` }]}>
-                <Ionicons name="ban-outline" size={20} color={colors.secondary} />
-              </View>
-              <Text style={[styles.settingLabel, { color: colors.text }]}>黑名单</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
-          </Pressable>
-
-          <Pressable
-            style={[styles.pressableRow]}
-            onPress={() => Alert.alert('提示', '隐私政策查看中')}
-          >
-            <View style={styles.pressableRowContent}>
-              <View style={[styles.iconBox, { backgroundColor: `${colors.secondary}15` }]}>
-                <Ionicons name="shield-checkmark-outline" size={20} color={colors.secondary} />
-              </View>
-              <Text style={[styles.settingLabel, { color: colors.text }]}>隐私政策</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
-          </Pressable>
+        <View style={[styles.section, { backgroundColor: colors.card }, shadows.sm]}>
+          <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>隐私设置</Text>
+          <ToggleRow
+            icon="eye-off"
+            label="隐身模式"
+            description="浏览时不显示在线状态"
+            value={ghostMode}
+            onValueChange={setGhostMode}
+            colors={colors}
+          />
+          <View style={[styles.divider, { backgroundColor: colors.border }]} />
+          <SettingRow icon="ban" label="黑名单" onPress={() => router.push('/blacklist')} colors={colors} />
         </View>
 
-        {/* 账号管理 */}
-        {isAuthenticated && (
-          <View style={[styles.section, { backgroundColor: colors.cardBackground }]}>
-            <Text style={[styles.sectionHeader, { color: colors.textSecondary }]}>账号管理</Text>
+        {/* 通知设置 */}
+        <View style={[styles.section, { backgroundColor: colors.card }, shadows.sm]}>
+          <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>通知设置</Text>
+          <ToggleRow
+            icon="heart"
+            label="匹配通知"
+            description="收到新匹配时通知"
+            value={matchNotif}
+            onValueChange={setMatchNotif}
+            colors={colors}
+          />
+          <View style={[styles.divider, { backgroundColor: colors.border }]} />
+          <ToggleRow
+            icon="chatbubble"
+            label="消息通知"
+            description="收到新消息时通知"
+            value={messageNotif}
+            onValueChange={setMessageNotif}
+            colors={colors}
+          />
+        </View>
 
-            <Pressable
-              style={[styles.pressableRow, { borderBottomColor: colors.separator }]}
-              onPress={handleChangePassword}
-            >
-              <View style={styles.pressableRowContent}>
-                <View style={[styles.iconBox, { backgroundColor: `${colors.accent}15` }]}>
-                  <Ionicons name="lock-closed-outline" size={20} color={colors.accent} />
-                </View>
-                <Text style={[styles.settingLabel, { color: colors.text }]}>修改密码</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
-            </Pressable>
-
-            <Pressable
-              style={[styles.pressableRow, { borderBottomColor: colors.separator }]}
-              onPress={handleBindPhone}
-            >
-              <View style={styles.pressableRowContent}>
-                <View style={[styles.iconBox, { backgroundColor: `${colors.accent}15` }]}>
-                  <Ionicons name="call-outline" size={20} color={colors.accent} />
-                </View>
-                <Text style={[styles.settingLabel, { color: colors.text }]}>绑定手机</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
-            </Pressable>
-
-            <Pressable
-              style={[styles.pressableRow]}
-              onPress={() => Alert.alert('账号信息', `已登录账号：${eduEmail}`)}
-            >
-              <View style={styles.pressableRowContent}>
-                <View style={[styles.iconBox, { backgroundColor: `${colors.accent}15` }]}>
-                  <Ionicons name="person-outline" size={20} color={colors.accent} />
-                </View>
-                <Text style={[styles.settingLabel, { color: colors.text }]}>账号信息</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
-            </Pressable>
-          </View>
-        )}
-
-        {/* 通用设置 */}
-        <View style={[styles.section, { backgroundColor: colors.cardBackground }]}>
-          <Text style={[styles.sectionHeader, { color: colors.textSecondary }]}>通用</Text>
-
-          <Pressable
-            style={[styles.pressableRow, { borderBottomColor: colors.separator }]}
-            onPress={() => Alert.alert('提示', '语言设置功能开发中')}
-          >
-            <View style={styles.pressableRowContent}>
-              <View style={[styles.iconBox, { backgroundColor: `${colors.textMuted}15` }]}>
-                <Ionicons name="language-outline" size={20} color={colors.textMuted} />
-              </View>
-              <Text style={[styles.settingLabel, { color: colors.text }]}>语言</Text>
-            </View>
-            <View style={styles.rowEnd}>
-              <Text style={[styles.rowValue, { color: colors.textSecondary }]}>简体中文</Text>
-              <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
-            </View>
-          </Pressable>
-
-          <Pressable
-            style={[styles.pressableRow, { borderBottomColor: colors.separator }]}
-            onPress={handleClearCache}
-          >
-            <View style={styles.pressableRowContent}>
-              <View style={[styles.iconBox, { backgroundColor: `${colors.textMuted}15` }]}>
-                <Ionicons name="trash-outline" size={20} color={colors.textMuted} />
-              </View>
-              <Text style={[styles.settingLabel, { color: colors.text }]}>清除缓存</Text>
-            </View>
-            {isClearingCache ? (
-              <ActivityIndicator size="small" color={colors.textMuted} />
-            ) : (
-              <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
-            )}
-          </Pressable>
-
-          <Pressable
-            style={[styles.pressableRow]}
-            onPress={() => router.push('/about')}
-          >
-            <View style={styles.pressableRowContent}>
-              <View style={[styles.iconBox, { backgroundColor: `${colors.textMuted}15` }]}>
-                <Ionicons name="information-circle-outline" size={20} color={colors.textMuted} />
-              </View>
-              <Text style={[styles.settingLabel, { color: colors.text }]}>关于我们</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
-          </Pressable>
+        {/* 其他 */}
+        <View style={[styles.section, { backgroundColor: colors.card }, shadows.sm]}>
+          <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>其他</Text>
+          <SettingRow icon="trash" label="清除缓存" onPress={handleClearCache} colors={colors} />
+          <View style={[styles.divider, { backgroundColor: colors.border }]} />
+          <SettingRow icon="document-text" label="用户协议" onPress={() => router.push('/terms')} colors={colors} />
+          <View style={[styles.divider, { backgroundColor: colors.border }]} />
+          <SettingRow icon="shield-checkmark" label="隐私政策" onPress={() => router.push('/privacy')} colors={colors} />
         </View>
 
         {/* 退出登录 */}
-        {isAuthenticated && (
-          <View style={styles.logoutSection}>
-            <Pressable onPress={handleLogout} style={[styles.logoutButton, { backgroundColor: '#FF3B30' }]}>
-              <Ionicons name="log-out-outline" size={20} color="#fff" />
-              <Text style={styles.logoutText}>退出登录</Text>
-            </Pressable>
-          </View>
-        )}
+        <Pressable onPress={handleSignOut} style={[styles.signOutBtn, { borderColor: colors.error }]}>
+          <Text style={[styles.signOutText, { color: colors.error }]}>退出登录</Text>
+        </Pressable>
 
-        {/* 版本信息 */}
-        <View style={styles.versionSection}>
-          <Text style={[styles.versionText, { color: colors.textMuted }]}>Dating in BNBU v1.0.0</Text>
-        </View>
-
-        {/* 底部间距 */}
-        <View style={{ height: 40 }} />
+        <Text style={[styles.version, { color: colors.textSecondary }]}>v1.0.0</Text>
       </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+// 设置行组件
+function SettingRow({
+  icon,
+  label,
+  onPress,
+  colors,
+}: {
+  icon: string;
+  label: string;
+  onPress: () => void;
+  colors: typeof Colors.light;
+}) {
+  return (
+    <Pressable onPress={onPress} style={styles.settingRow}>
+      <View style={styles.settingRowLeft}>
+        <View style={[styles.iconWrap, { backgroundColor: colors.cream }]}>
+          <Ionicons name={icon as any} size={18} color={colors.primary} />
+        </View>
+        <Text style={[styles.settingLabel, { color: colors.text }]}>{label}</Text>
+      </View>
+      <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
+    </Pressable>
+  );
+}
+
+// 开关行组件
+function ToggleRow({
+  icon,
+  label,
+  description,
+  value,
+  onValueChange,
+  colors,
+}: {
+  icon: string;
+  label: string;
+  description?: string;
+  value: boolean;
+  onValueChange: (v: boolean) => void;
+  colors: typeof Colors.light;
+}) {
+  return (
+    <View style={styles.toggleRow}>
+      <View style={styles.toggleRowLeft}>
+        <View style={[styles.iconWrap, { backgroundColor: colors.cream }]}>
+          <Ionicons name={icon as any} size={18} color={colors.primary} />
+        </View>
+        <View>
+          <Text style={[styles.toggleLabel, { color: colors.text }]}>{label}</Text>
+          {description && (
+            <Text style={[styles.toggleDesc, { color: colors.textSecondary }]}>{description}</Text>
+          )}
+        </View>
+      </View>
+      <Switch
+        value={value}
+        onValueChange={onValueChange}
+        trackColor={{ false: colors.border, true: colors.primary }}
+        thumbColor="#FFFFFF"
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
+  container: { flex: 1 },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingTop: Platform.OS === 'ios' ? 50 : 30,
-    paddingBottom: 16,
-    borderBottomWidth: 1,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: 12,
   },
-  headerButton: {
-    width: 40,
-    height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerTitle: {
-    fontSize: 17,
-    fontWeight: '600',
-  },
-  scrollView: {
-    flex: 1,
-  },
-  section: {
-    marginHorizontal: 16,
-    marginTop: 24,
-    borderRadius: 14,
-    overflow: 'hidden',
-  },
-  sectionHeader: {
-    fontSize: 13,
-    fontWeight: '600',
-    textTransform: 'uppercase',
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 8,
-  },
-  settingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    borderBottomWidth: 1,
-  },
-  settingRowContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  iconBox: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
-  settingLabel: {
-    fontSize: 16,
-  },
-  pressableRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    borderBottomWidth: 1,
-  },
-  pressableRowContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  rowEnd: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  rowValue: {
-    fontSize: 14,
-    marginRight: 4,
-    color: '#8E8E93',
-  },
-  logoutSection: {
-    marginTop: 32,
-    paddingHorizontal: 16,
-  },
-  logoutButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 14,
-    paddingVertical: 16,
-    gap: 8,
-  },
-  logoutText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  versionSection: {
-    marginTop: 32,
-    alignItems: 'center',
-  },
-  versionText: {
-    fontSize: 12,
-  },
+  backBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
+  placeholder: { width: 40 },
+  headerTitle: { fontSize: 24, fontWeight: typography.weights.bold },
+  scrollContent: { paddingBottom: spacing.xxl },
+
+  section: { marginHorizontal: spacing.lg, marginTop: spacing.md, padding: spacing.lg, borderRadius: borderRadius.lg },
+  sectionLabel: { fontSize: 11, fontWeight: typography.weights.semibold, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: spacing.sm },
+
+  settingRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 12 },
+  settingRowLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  iconWrap: { width: 32, height: 32, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
+  settingLabel: { fontSize: 14, fontWeight: typography.weights.medium },
+  divider: { height: 1, marginHorizontal: -spacing.lg },
+
+  toggleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 12 },
+  toggleRowLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  toggleLabel: { fontSize: 14, fontWeight: typography.weights.semibold },
+  toggleDesc: { fontSize: 11, marginTop: 2 },
+
+  signOutBtn: { marginHorizontal: spacing.lg, marginTop: spacing.lg, paddingVertical: 14, borderRadius: borderRadius.md, borderWidth: 1.5, alignItems: 'center' },
+  signOutText: { fontSize: 15, fontWeight: typography.weights.semibold },
+  version: { textAlign: 'center', fontSize: 12, marginTop: spacing.md, marginBottom: spacing.lg },
 });

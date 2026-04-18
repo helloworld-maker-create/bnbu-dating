@@ -268,7 +268,7 @@ export default function ChatScreen() {
         keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
       >
         {/* 头部 */}
-        <View style={[styles.header, { backgroundColor: colors.cardBackground, borderBottomColor: colors.separator }]}>
+        <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.separator }]}>
           <View style={styles.headerLeft}>
             <Pressable onPress={() => router.back()} style={styles.backButton}>
               <Ionicons name="chevron-back" size={28} color={colors.text} />
@@ -320,14 +320,14 @@ export default function ChatScreen() {
             pressed && { opacity: 0.7 },
           ]}
         >
-          <Ionicons name="sparkles" size={16} color={colors.accent} />
+          <Ionicons name="sparkles" size={16} color={colors.secondary} />
           <Text style={[styles.icebreakerText, { color: colors.textSecondary }]}>
             AI 破冰助手
           </Text>
         </Pressable>
 
         {/* 输入区域 */}
-        <View style={[styles.inputContainer, { backgroundColor: colors.cardBackground, borderTopColor: colors.separator }]}>
+        <View style={[styles.inputContainer, { backgroundColor: colors.card, borderTopColor: colors.separator }]}>
           <Pressable style={[styles.attachButton, { backgroundColor: colors.tagBackground }]}>
             <Ionicons name="add" size={24} color={colors.textSecondary} />
           </Pressable>
